@@ -18,19 +18,22 @@ Citas médicas de la familia: visitas, pruebas, medicación, tareas e informes, 
 
 ## Puesta en marcha (una vez)
 
-Se reutiliza el mismo proyecto de Google Cloud que la lista de la compra. No hay que crear otro.
+Medikuak tiene su propio proyecto de Google Cloud, **medikuak** (número 163541765712), separado del de la lista de la compra. Es gratis y no necesita facturación.
 
 1. **GitHub Pages.** En el repositorio: Settings → Pages → *Deploy from a branch* → rama `main`, carpeta `/ (root)`. La app queda en `https://bsanchezlarrouy.github.io/medikuak/`.
-2. **Cliente OAuth** (Google Cloud Console → APIs y servicios → Credenciales → el cliente «Aplicación web» de la lista de la compra):
-   - *Orígenes de JavaScript autorizados:* `https://bsanchezlarrouy.github.io` (ya está).
-   - *URI de redirección autorizados:* añadir `https://bsanchezlarrouy.github.io/medikuak/` (con la barra final).
-3. **Selector de Google Drive (Google Picker).** Solo hace falta para que entre una cuenta distinta de la que creó la hoja.
-   - APIs y servicios → Biblioteca → **Google Picker API** → Habilitar.
-   - Credenciales → Crear credenciales → **Clave de API**. En la clave:
-     - *Restricciones de aplicación:* Sitios web → `https://bsanchezlarrouy.github.io/medikuak/*`
-     - *Restricciones de API:* solo **Google Picker API**.
-   - Pega la clave en `config.js`, en `googleApiKey`. Es pública por diseño: no da acceso a ningún dato.
-4. **Usuarios de prueba.** Pantalla de consentimiento de OAuth → Usuarios de prueba: añade el correo de cada cuenta que vaya a entrar.
+2. **APIs activadas** en el proyecto: Google Sheets API y Google Picker API.
+3. **Google Auth Platform** (pantalla de permiso): app «Medikuak», audiencia *External*, en modo prueba.
+   - *Test users:* el correo de cada cuenta que vaya a entrar.
+   - *Data access:* `openid`, `userinfo.email`, `userinfo.profile` y `drive.file`.
+4. **Cliente OAuth «Medikuak»** (tipo *Web application*):
+   - *Orígenes de JavaScript autorizados:* `https://bsanchezlarrouy.github.io`
+   - *URI de redirección autorizados:* `https://bsanchezlarrouy.github.io/medikuak/` (con la barra final)
+5. **Clave de API «Medikuak Picker»** para el selector de Google Drive:
+   - *Restricciones de aplicación:* Sitios web → `https://bsanchezlarrouy.github.io/medikuak/*`
+   - *Restricciones de API:* solo Google Picker API.
+6. El ID de cliente y la clave van en `config.js`. Ninguno es secreto: la clave solo funciona desde esta web y solo para el selector.
+
+Si alguien nuevo tiene que entrar, añade su correo en *Test users* y comparte con él la hoja.
 
 ## Primer uso
 
