@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Medikuak</title>
+<meta name="theme-color" content="#F6F4EF">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Medikuak">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* VOICE: tranquila y clara, como una libreta de casa bien ordenada; sin alarmas salvo lo que pide acción.
+   IDEA: la carpeta de papeles médicos de la familia, convertida en app de bolsillo.
+   PICTURE: la propia app funcionando, con fichas que suben desde abajo.
+   COLOUR and TYPE: papel cálido, tinta azul pizarra, ámbar solo para lo atrasado. Atkinson Hyperlegible, grande.
+   LAYOUT: una columna de móvil, pestañas abajo, botón + flotante, hojas apiladas. */
+:root{color-scheme:light dark;
+--bg:light-dark(#F6F4EF,#121619);--card:light-dark(#FFFFFF,#1C2227);--ink:light-dark(#18212B,#ECEFF1);
+--mute:light-dark(#545E69,#A9B3BC);--line:light-dark(#E2DED5,#2E363D);--acc:light-dark(#1D5C86,#8CC4EC);
+--accbg:light-dark(#E3EEF6,#173A52);--warn:light-dark(#8A4B00,#F3C27F);--warnbg:light-dark(#FBEBD3,#3B2A12);
+--warnln:light-dark(#E9C38E,#6A4A1E);--chip:light-dark(#ECEAE4,#262D33);--btn:light-dark(#18212B,#ECEFF1);
+--btnink:light-dark(#FFFFFF,#121619);--err:light-dark(#A32D2D,#F2A3A3);--ok:light-dark(#2F5D3A,#A6D8B0)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.45 'Atkinson Hyperlegible',system-ui,sans-serif;overflow-x:clip}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--acc)}
+:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+#app{max-width:480px;margin:0 auto;min-height:100dvh;padding-bottom:110px}
+.top{position:sticky;top:0;z-index:20;background:var(--bg);padding:14px 18px 8px}
+.top h1{margin:0;font-size:30px;line-height:1.1}
+.sync{display:inline-flex;align-items:center;gap:6px;margin-top:6px;min-height:32px;padding:4px 12px;border-radius:999px;border:0;background:var(--chip);color:var(--mute);font-size:14px}
+.sync i{width:9px;height:9px;border-radius:50%;background:currentColor;flex:none}
+.sync.ok i{background:var(--ok)}.sync.warn{background:var(--warnbg);color:var(--warn)}.sync.acc{background:var(--accbg);color:var(--acc)}.sync.err{color:var(--err)}
+.banner{display:flex;gap:8px;align-items:center;margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--accbg);color:var(--acc);font-size:15px}
+.pf{display:flex;gap:8px;overflow-x:auto;padding:4px 18px 12px;scrollbar-width:none}
+.pill{flex:none;min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--line);background:var(--card);font-size:15px}
+.pill.on,.pill[aria-pressed=true]{border:1.5px solid var(--acc);background:var(--accbg);color:var(--acc);font-weight:700}
+main{padding:0 18px;display:flex;flex-direction:column;gap:24px}
+.sec{display:flex;flex-direction:column;gap:10px}
+h2,h3{margin:0}h3{font-size:18px}
+.sec>h3{display:flex;align-items:center;gap:8px}
+.list{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.row{display:flex;gap:14px;align-items:center;width:100%;padding:13px 16px;border:0;border-bottom:1px solid var(--line);background:none;text-align:left}
+.list>:last-child{border-bottom:0}
+.when{width:52px;flex:none;display:flex;flex-direction:column;align-items:center;line-height:1.1}
+.when small{font-size:12px;font-weight:700;color:var(--mute);text-transform:uppercase}.when b{font-size:23px}
+.when.h b{font-size:18px}
+.txt{flex:1;display:flex;flex-direction:column;gap:2px}
+.t{font-weight:700}.s{color:var(--mute);font-size:15px}
+.tag{flex:none;font-size:12px;font-weight:700;padding:3px 8px;border-radius:6px;background:var(--chip);color:var(--mute)}
+.tag.tv{background:var(--accbg);color:var(--acc)}
+.rl{display:flex;margin-top:4px}
+.red{display:inline-flex;align-items:center;gap:6px;padding:2px 9px 2px 2px;border-radius:8px;background:var(--rb);color:var(--ri);font-size:13px;font-weight:700;line-height:1.2;white-space:nowrap}
+.red b,.red img{width:22px;height:22px;border-radius:6px;flex:none}
+.red b{display:inline-flex;align-items:center;justify-content:center;background:var(--ri);color:var(--card);font-size:12px}
+.red img{object-fit:contain;background:#fff;padding:1px}
+.red.big{font-size:15px;padding:3px 12px 3px 3px;border-radius:10px}.red.big b,.red.big img{width:30px;height:30px;border-radius:8px}
+.r1{--rb:light-dark(#E2EFE6,#1D3326);--ri:light-dark(#2F5D3A,#A6D8B0)}.r2{--rb:light-dark(#E3EEF6,#173A52);--ri:light-dark(#1D5C86,#8CC4EC)}
+.r3{--rb:light-dark(#F7E2E2,#3F2222);--ri:light-dark(#8A2F2F,#F2B0B0)}.r4{--rb:light-dark(#EEE7F6,#2E2944);--ri:light-dark(#5A3F8A,#C8BEF0)}.r0{--rb:var(--chip);--ri:var(--mute)}
+.logoprev{display:flex;align-items:center;gap:14px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--card)}
+.alert{background:var(--warnbg);border:1px solid var(--warnln);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.ah{display:flex;gap:10px;align-items:flex-start;color:var(--warn)}.ah .s{color:var(--warn)}.ah p{margin:0}.ah .t{color:var(--ink)}
+.btns{display:flex;gap:8px;flex-wrap:wrap}.btns>*{flex:1 1 140px}
+.b1,.b2{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:46px;padding:0 14px;border-radius:12px;font-size:15px;font-weight:700;text-decoration:none;text-align:center}
+.b1{border:0;background:var(--btn);color:var(--btnink)}
+.b2{border:1px solid var(--line);background:var(--card);color:var(--ink)}
+.warnb{background:var(--warn);color:var(--btnink)}
+.tel span{display:flex;flex-direction:column;line-height:1.15;text-align:left}.tel small{font-weight:400;font-size:13px;white-space:nowrap}
+.danger{color:var(--err);border-color:currentColor}
+.chk{display:flex;gap:14px;align-items:flex-start;padding:13px 16px;border-bottom:1px solid var(--line);cursor:pointer}
+.chk input{width:24px;height:24px;margin:1px 0 0;accent-color:var(--acc);flex:none}
+.chk>span{display:flex;flex-direction:column;gap:2px}
+.empty{margin:0;padding:14px 16px;color:var(--mute);font-size:15px}
+.card{display:flex;flex-direction:column;gap:6px;width:100%;padding:14px 16px;border:1px solid var(--line);border-radius:16px;background:var(--card);text-align:left;text-decoration:none;color:var(--ink)}
+.card p{margin:0}
+.next{display:flex;gap:8px;align-items:center;margin-top:4px;padding:8px 10px;border-radius:10px;background:var(--accbg);font-size:15px}
+.next.late{background:var(--warnbg);color:var(--warn)}.next.soft{background:var(--chip)}
+.av{flex:none;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:700;background:var(--a);color:var(--ai)}
+.h1{--a:light-dark(#D9E7F2,#1E3A50);--ai:light-dark(#1D5C86,#9CCBEE)}.h2{--a:light-dark(#F6E3CC,#43301A);--ai:light-dark(#8A4B00,#F3C27F)}
+.h3{--a:light-dark(#E4E0F0,#2E2944);--ai:light-dark(#4B3F7A,#C8BEF0)}.h4{--a:light-dark(#DCEBDF,#1F3324);--ai:light-dark(#2F5D3A,#A6D8B0)}
+.h5{--a:light-dark(#F5DEDE,#432222);--ai:light-dark(#7A2E2E,#F2B0B0)}.h0{--a:var(--chip);--ai:var(--mute)}
+.who{display:flex;gap:14px;align-items:center}
+.add{min-height:46px;border-radius:12px;border:1px dashed light-dark(#A9A293,#56606A);background:none;color:var(--acc);font-weight:700;font-size:15px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.gbtn{min-height:68px;border-radius:14px;border:1px solid var(--line);background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:14px;font-weight:700;color:var(--ink)}
+.gbtn svg{color:var(--acc)}
+.hist{display:flex;flex-direction:column}
+.hi{display:flex;gap:12px;width:100%;border:0;background:none;text-align:left;padding:0}
+.rail{width:14px;flex:none;display:flex;flex-direction:column;align-items:center}
+.rail i{width:12px;height:12px;border-radius:50%;background:var(--acc);margin-top:6px}.rail b{flex:1;width:2px;background:var(--line);margin-top:4px}
+.rail i.o{background:none;border:2px solid var(--mute)}
+.hb{flex:1;display:flex;flex-direction:column;gap:5px;padding:12px 14px;margin-bottom:10px;border:1px solid var(--line);border-radius:14px;background:var(--card)}
+.hb.plain{border:0;background:none;padding:2px 0 10px}
+.q{font-size:15px;line-height:1.4}
+.chips{display:flex;gap:6px;flex-wrap:wrap}.chips span{font-size:13px;padding:3px 9px;border-radius:8px;background:var(--chip);color:var(--mute)}
+.li{display:flex;gap:12px;align-items:flex-start;width:100%;padding:13px 16px;border:0;border-bottom:1px solid var(--line);background:none;text-align:left;color:var(--ink);text-decoration:none}
+.li p{margin:0}.li>svg{flex:none;margin-top:2px;color:var(--mute)}.li>div{flex:1}
+.kv{display:grid;grid-template-columns:7.5em minmax(0,1fr);gap:8px 12px;margin:0;padding:14px 16px;background:var(--card);border:1px solid var(--line);border-radius:16px}
+.kv dt{color:var(--mute);font-size:15px}.kv dd{margin:0}
+.kv button{border:0;background:none;padding:0;color:var(--acc);font-weight:700;text-align:left;min-height:28px}
+.meta{font-size:14px;color:var(--mute);margin:0}
+.steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.st{min-height:64px;border-radius:12px;border:1px solid var(--line);background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:14px;color:var(--mute)}
+.st .c{width:24px;height:24px;border-radius:50%;border:2px solid currentColor;display:inline-flex;align-items:center;justify-content:center}
+.st.done{color:var(--acc)}.st.done .c{background:var(--acc);border-color:var(--acc);color:var(--btnink)}
+.st.cur{border:2px solid var(--acc);background:var(--accbg);color:var(--acc);font-weight:700}
+.f{display:flex;flex-direction:column;gap:6px;font-size:15px;font-weight:700}
+.f input,.f select,.f textarea,.inp{width:100%;min-height:50px;padding:10px 12px;border-radius:12px;border:1px solid light-dark(#C9C3B6,#46505A);background:var(--card);font-size:16px;font-weight:400}
+.f textarea{resize:vertical;line-height:1.4}
+.pills{display:flex;gap:8px;flex-wrap:wrap}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);padding:4px;border-radius:14px;background:var(--chip)}
+.seg button{min-height:44px;border:0;border-radius:11px;background:none;font-size:15px;color:var(--mute)}
+.seg button[aria-checked=true]{background:var(--card);color:var(--ink);font-weight:700;box-shadow:0 1px 2px rgba(0,0,0,.15)}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.fixed{margin:0;padding:12px 14px;border-radius:12px;background:var(--chip);font-weight:700}
+.hint{margin:0;font-size:14px;color:var(--mute);font-weight:400}
+.ferr{margin:0;color:var(--err);font-size:15px;font-weight:700}
+.foot{display:flex;flex-direction:column;gap:10px;padding-top:4px}
+.tabs{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(480px,100%);z-index:25;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));background:var(--card);border-top:1px solid var(--line);padding:6px 4px calc(10px + env(safe-area-inset-bottom))}
+.tabs button{min-height:54px;border:0;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12.5px;color:var(--mute)}
+.tabs button[aria-current=page]{color:var(--acc);font-weight:700}
+.fab{position:fixed;z-index:26;bottom:calc(84px + env(safe-area-inset-bottom));right:max(16px,calc(50% - 224px));width:60px;height:60px;border-radius:18px;border:0;background:var(--btn);color:var(--btnink);box-shadow:0 4px 14px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center}
+.scrim{position:fixed;inset:0;background:rgba(10,14,18,.42)}
+.sheet{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(480px,100%);max-height:92dvh;overflow:auto;overscroll-behavior:contain;background:var(--bg);border-radius:22px 22px 0 0;padding:8px 18px calc(24px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:18px;box-shadow:0 -8px 30px rgba(0,0,0,.2)}
+.sheet.in{animation:up .26s cubic-bezier(.2,.8,.2,1)}
+@keyframes up{from{transform:translate(-50%,40%);opacity:.4}to{transform:translate(-50%,0);opacity:1}}
+@media (prefers-reduced-motion:reduce){.sheet.in{animation:none}}
+.grab{width:42px;height:5px;border-radius:3px;background:var(--line);align-self:center;flex:none}
+.sh{display:flex;align-items:flex-start;gap:8px}.sh h2{flex:1;font-size:25px;line-height:1.15;padding-top:4px}
+.sh .k{display:block;font-size:13px;font-weight:700;color:var(--mute);margin-bottom:2px}
+.x{width:44px;height:44px;border-radius:50%;border:0;background:var(--chip);display:flex;align-items:center;justify-content:center;flex:none}
+#toast{position:fixed;z-index:90;left:50%;transform:translateX(-50%);bottom:calc(92px + env(safe-area-inset-bottom));width:min(448px,calc(100% - 24px));display:flex;align-items:center;gap:12px;padding:10px 10px 10px 16px;border-radius:14px;background:var(--btn);color:var(--btnink);box-shadow:0 6px 20px rgba(0,0,0,.3)}
+#toast[hidden]{display:none}#toast span{flex:1}
+#toast button{min-height:44px;padding:0 12px;border:0;border-radius:10px;background:none;color:light-dark(#9CCBEE,#1D5C86);font-weight:700}
+#ov{position:fixed;inset:0;z-index:30;background:var(--bg);overflow:auto}
+#ov[hidden]{display:none}
+.onb{max-width:440px;margin:0 auto;min-height:100%;padding:48px 24px 32px;display:flex;flex-direction:column;gap:20px}
+.onb h2{font-size:clamp(30px,8vw,38px);line-height:1.08;text-wrap:balance}
+.onb p{margin:0}
+.mark{width:84px;height:84px}
+.ticks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.ticks li{display:flex;gap:12px;align-items:flex-start}.ticks svg{flex:none;color:var(--ok);margin-top:1px}
+.choice{display:flex;gap:14px;align-items:flex-start;width:100%;padding:18px;border-radius:18px;border:1px solid var(--line);background:var(--card);text-align:left}
+.choice svg{flex:none;color:var(--acc)}
+.small{font-size:14px;color:var(--mute)}
+.acct{display:flex;gap:14px;align-items:center;width:100%;min-height:64px;padding:8px 4px;border:0;border-bottom:1px solid var(--line);background:none;text-align:left}
+.qrbox{display:flex;flex-direction:column;align-items:center;gap:10px}
+.qrimg{background:#fff;padding:12px;border-radius:14px;line-height:0;min-height:60px;display:flex;align-items:center;justify-content:center}.qrimg img,.qrimg canvas{width:220px;height:220px}.qrimg .small{line-height:1.4}
+.ferr+.b2,.onb .b2{min-height:46px}
+.code{display:block;padding:10px 12px;border-radius:10px;background:var(--chip);font-size:14px;overflow-wrap:anywhere}
+.sw{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:10px 16px;border:0;border-bottom:1px solid var(--line);background:none;text-align:left}
+.sw span{flex:1}
+.sw i{width:46px;height:28px;border-radius:999px;background:var(--line);position:relative;flex:none;transition:background .2s}
+.sw i::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .2s}
+.sw[aria-checked=true] i{background:var(--acc)}.sw[aria-checked=true] i::after{left:21px}
+.sim{padding:14px;border-radius:18px;border:1.5px dashed light-dark(#B9B2A4,#56606A)}
+.plain{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px;font-size:15px}
+.note{margin:0 auto;padding:22px 18px 0;font-size:13px;color:var(--mute);text-align:center}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="top" id="top"></header>
+  <div id="pf"></div>
+  <main id="main"></main>
+</div>
+<button class="fab" id="fab" data-a="nuevo" aria-label="Añadir"></button>
+<nav class="tabs" id="tabs" aria-label="Secciones"></nav>
+<div id="sheets"></div>
+<div id="ov" hidden></div>
+<div id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="config.js"></script>
+<script>
+{
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const iso=n=>{const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()+n);const p=x=>String(x).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`};
+const HOY=iso(0),YEAR=HOY.slice(0,4);
+const DIAS=['dom','lun','mar','mié','jue','vie','sáb'],MES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const MESL=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const dt=s=>new Date(s+'T12:00');
+const fshort=s=>{if(!s)return'';const d=dt(s);return `${d.getDate()} ${MES[d.getMonth()]}${s.slice(0,4)!==YEAR?' '+s.slice(0,4):''}`};
+const fdate=s=>{if(!s)return'';const d=dt(s);return `${DIAS[d.getDay()]} ${d.getDate()} ${MES[d.getMonth()]}`};
+const fmonth=s=>{const d=dt(s);return `${MESL[d.getMonth()]}${s.slice(0,4)!==YEAR?' de '+s.slice(0,4):''}`};
+const rel=s=>{const n=Math.round((dt(s)-dt(HOY))/864e5);return n===0?'hoy':n===1?'mañana':n===-1?'ayer':n>0?`en ${n} días`:`hace ${-n} días`};
+const hace=t=>{const s=Math.max(0,Math.round((Date.now()-t)/1000));return s<10?'ahora mismo':s<60?`hace ${s} s`:s<3600?`hace ${Math.round(s/60)} min`:s<86400?`hace ${Math.round(s/3600)} h`:`hace ${Math.round(s/86400)} días`};
+const uid=()=>Math.random().toString(36).slice(2,10);
+const lines=s=>String(s||'').split('\n').map(x=>x.trim()).filter(Boolean);
+
+const I={home:'<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>',
+cal:'<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+fam:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"/><path d="M16 4.8a3.5 3.5 0 0 1 0 6.4M18 14.8c1.8.7 3 2.5 3.5 5.2"/>',
+med:'<path d="M5 3v6a5 5 0 0 0 10 0V3"/><path d="M10 14v2a5 5 0 0 0 10 0v-2"/><circle cx="20" cy="12" r="2"/>',
+more:'<circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/>',
+plus:'<path d="M12 5v14M5 12h14"/>',chev:'<path d="m9 6 6 6-6 6"/>',x:'<path d="M6 6l12 12M18 6 6 18"/>',
+phone:'<path d="M5 4h3l2 5-2.5 1.5a11 11 0 0 0 6 6L15 14l5 2v3a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/>',
+flask:'<path d="M9 3h6M10 3v6L4.5 18.5A1.7 1.7 0 0 0 6 21h12a1.7 1.7 0 0 0 1.5-2.5L14 9V3"/><path d="M7 15h10"/>',
+pill:'<rect x="2.5" y="8.5" width="19" height="7" rx="3.5" transform="rotate(-45 12 12)"/><path d="m8.5 8.5 7 7"/>',
+doc:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>',
+check:'<path d="m5 12.5 4.5 4.5L19 7.5"/>',warn:'<path d="M12 3.5 2.5 20h19z"/><path d="M12 10v4.5M12 17.5v.1"/>',
+task:'<rect x="4" y="4" width="16" height="16" rx="3"/><path d="m8 12 3 3 5-6"/>',
+lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+ext:'<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
+qr:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v7M14 20h3"/>',
+sheet:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 9h16M4 15h16M10 3v18"/>',
+join:'<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>'};
+const ic=(n,s=22)=>`<svg aria-hidden="true" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${n==='more'?3:1.9}" stroke-linecap="round" stroke-linejoin="round">${I[n]}</svg>`;
+
+/* ---------- configuración (config.js) ---------- */
+const CFG=window.MEDIKUAK_CONFIG||{};
+const CLIENT_ID=String(CFG.googleClientId||''),API_KEY=String(CFG.googleApiKey||'');
+const APP_ID=CLIENT_ID.split('-')[0];   // número del proyecto de Google Cloud, lo pide el selector de Drive
+const SCOPES='openid email profile https://www.googleapis.com/auth/drive.file';
+const configured=()=>/^\d+-[\w]+\.apps\.googleusercontent\.com$/.test(CLIENT_ID);
+const LS=k=>'medikuak-'+k;
+const jget=k=>{try{return JSON.parse(localStorage.getItem(LS(k))||'null')}catch(e){return null}};
+const jset=(k,v)=>{try{if(v==null)localStorage.removeItem(LS(k));else localStorage.setItem(LS(k),JSON.stringify(v))}catch(e){}};
+
+/* ---------- tablas: una pestaña de la hoja por tabla ----------
+   Cada fila: id, los campos, Actualizado, Por (móvil) y Borrado. Tipos: d = fecha AAAA-MM-DD, b = sí/no, n = número. */
+const TABLAS={
+  personas:['Familia',[['nombre','Nombre'],['h','Color','n']]],
+  redes:['Redes',[['nombre','Nombre'],['h','Color'],['logo','Logo (no tocar)']]],
+  medicos:['Medicos',[['nombre','Nombre'],['esp','Especialidad'],['red','Red (id)'],['centro','Centro'],['tel','Teléfono'],['notas','Notas']]],
+  episodios:['Episodios',[['persona','Persona (id)'],['titulo','Título'],['estado','Estado'],['ini','Inicio','d'],['fin','Fin','d'],['prev','Revisión prevista','d'],['notas','Notas']]],
+  visitas:['Visitas',[['ep','Episodio (id)'],['med','Médico (id)'],['fecha','Fecha','d'],['hora','Hora'],['estado','Estado'],['dijo','Qué dijeron']]],
+  pruebas:['Pruebas',[['ep','Episodio (id)'],['vis','Visita (id)'],['nombre','Prueba'],['estado','Estado'],['esperando','Pedida el','d'],['red','Red (id)'],['fecha','Fecha','d'],['hora','Hora'],['lugar','Lugar'],['prep','Preparación'],['res','Resultado']]],
+  med:['Medicacion',[['ep','Episodio (id)'],['vis','Visita (id)'],['medico','Médico (id)'],['farmaco','Fármaco'],['pauta','Pauta'],['ini','Inicio','d'],['fin','Fin','d']]],
+  tareas:['Tareas',[['ep','Episodio (id)'],['vis','Visita (id)'],['texto','Tarea'],['tipo','Tipo'],['med','Médico (id)'],['esperando','Pedida el','d'],['hecha','Hecha','b'],['cita','Cita (id)']]],
+  docs:['Informes',[['ep','Episodio (id)'],['vis','Visita (id)'],['titulo','Título'],['url','Enlace'],['fecha','Fecha','d']]]
+};
+const KEYS=Object.keys(TABLAS);
+const empty=()=>Object.fromEntries(KEYS.map(k=>[k,[]]));
+const REDES0=[['osa','Osakidetza','r1'],['qui','Quirónsalud','r2'],['imq','IMQ','r3']];
+
+/* ---------- copia en el móvil: IndexedDB, con respaldo en localStorage ---------- */
+let idb=null;
+function openIDB(){return new Promise(res=>{try{const r=indexedDB.open('medikuak',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>res(null)}catch(e){res(null)}})}
+function idbGet(k){return new Promise(res=>{if(!idb)return res(null);try{const t=idb.transaction('kv','readonly').objectStore('kv').get(k);t.onsuccess=()=>res(t.result||null);t.onerror=()=>res(null)}catch(e){res(null)}})}
+function idbPut(k,v){return new Promise(res=>{if(!idb)return res(false);try{const tx=idb.transaction('kv','readwrite');tx.objectStore('kv').put(v,k);tx.oncomplete=()=>res(true);tx.onerror=()=>res(false)}catch(e){res(false)}})}
+let D=empty();
+let C=Object.assign({device:'',sheetId:'',lector:false,pend:0},jget('config')||{});
+let auth=jget('google');   // {token, exp, email, name}
+const saveC=()=>jset('config',C);
+let saveT=null;
+function save(){saveC();clearTimeout(saveT);saveT=setTimeout(async()=>{let ok=await idbPut('data',D);if(!ok){try{localStorage.setItem(LS('data'),JSON.stringify(D));ok=true}catch(e){}}if(!ok)toast('No se ha podido guardar en el móvil.')},150)}
+function prune(o){const lim=Date.now()-30*864e5;for(const k of KEYS)o[k]=(o[k]||[]).filter(x=>x&&x.id&&(!x.borrado||x.borrado>lim))}
+async function loadAll(){
+  idb=await openIDB();let v=await idbGet('data');
+  if(!v){try{v=JSON.parse(localStorage.getItem(LS('data'))||'null')}catch(e){v=null}}
+  D=Object.assign(empty(),v||{});prune(D);
+  try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
+}
+
+const S={tab:'inicio',pf:'',sheets:[],anim:-1,syncing:false,last:0,err:'',errSt:0,sheetState:'',busy:'',toast:null,q:'',closed:false,confirm:''};
+
+const live=k=>D[k].filter(x=>!x.borrado);
+const get=(k,id)=>D[k].find(x=>x.id===id&&!x.borrado);
+const per=id=>get('personas',id)||{id:'',nombre:'—',h:0};
+const epi=id=>get('episodios',id);
+const medi=id=>get('medicos',id);
+const epPer=ep=>per(epi(ep)?.persona);
+const fp=pid=>!S.pf||pid===S.pf;
+const av=(p,s=36)=>`<span class="av h${p.h||0}" aria-hidden="true" style="width:${s}px;height:${s}px;font-size:${Math.round(s*.42)}px">${esc((p.nombre||'?')[0])}</span>`;
+const stamp=o=>Object.assign(o,{act:Date.now(),por:C.device});
+const redOf=id=>get('redes',id);
+const badge=(rid,big)=>{const r=redOf(rid);if(!r)return'';const img=/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(r.logo||'');
+  return `<span class="red ${esc(r.h)}${big?' big':''}">${img?`<img src="${r.logo}" alt="">`:`<b aria-hidden="true">${esc(r.nombre[0])}</b>`}${esc(r.nombre)}</span>`};
+const redOpts=()=>[['','Sin indicar']].concat(live('redes').map(r=>[r.id,r.nombre]));
+/* el logo se reduce a un icono PNG pequeño: cabe en una celda de la hoja (máx. 50.000 caracteres) */
+function toLogo(file){return new Promise((ok,ko)=>{const fr=new FileReader();fr.onerror=ko;fr.onload=()=>{const im=new Image();im.onerror=ko;im.onload=()=>{
+  for(const N of [96,72,56,40]){const c=document.createElement('canvas');c.width=c.height=N;const x=c.getContext('2d');const k=Math.min(N/im.width,N/im.height),w=im.width*k,h=im.height*k;x.drawImage(im,(N-w)/2,(N-h)/2,w,h);const u=c.toDataURL('image/png');if(u.length<45000)return ok(u)}
+  ko(new Error('grande'))};im.src=fr.result};fr.readAsDataURL(file)})}
+const esCita=t=>/^pedir (una )?(cita|revisi)/i.test(t);
+const telLink=m=>m&&m.tel?`<a class="b2 tel" href="tel:${esc(m.tel.replace(/\s/g,''))}">${ic('phone',18)}<span>Llamar<small>${esc(m.tel)}</small></span></a>`:'';
+
+function citas(){
+  const a=live('visitas').filter(v=>v.estado==='cita').map(v=>{const m=medi(v.med);return{k:'visitas',id:v.id,fecha:v.fecha,hora:v.hora,tipo:'Visita',titulo:m?`${m.esp} · ${m.nombre}`:'Visita',p:epPer(v.ep),lugar:m?.centro||'',red:m?.red||'',ep:v.ep,epT:epi(v.ep)?.titulo||''}});
+  const b=live('pruebas').filter(x=>x.estado==='citada'&&x.fecha).map(x=>({k:'pruebas',id:x.id,fecha:x.fecha,hora:x.hora,tipo:'Prueba',titulo:x.nombre,p:epPer(x.ep),lugar:x.lugar||'',red:x.red||'',ep:x.ep,epT:epi(x.ep)?.titulo||''}));
+  return a.concat(b).sort((x,y)=>(x.fecha+(x.hora||'')).localeCompare(y.fecha+(y.hora||'')));
+}
+function gcal(c){
+  const p=n=>String(n).padStart(2,'0');const [h,m]=(c.hora||'09:00').split(':').map(Number);const d=c.fecha.replace(/-/g,'');
+  const e=Math.min(h*60+m+60,23*60+59);
+  return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(`${c.p.nombre} · ${c.titulo}`)+`&dates=${d}T${p(h)}${p(m)}00/${d}T${p(Math.floor(e/60))}${p(e%60)}00&ctz=Europe/Madrid`+(c.lugar?'&location='+encodeURIComponent(c.lugar):'');
+}
+
+/* ---------- escribir y deshacer ---------- */
+const LECTOR='Solo lectura: tu cuenta es Lector en esta hoja.';
+function write(fn,msg){
+  if(C.lector){toast(LECTOR);return false}
+  const snap=JSON.parse(JSON.stringify(D));
+  fn();C.pend++;save();render();
+  toast(msg,()=>{undoTo(snap);toast('Cambio deshecho')});
+  scheduleSync();return true;
+}
+/* deshacer vuelve a escribir lo anterior con hora nueva, para que gane al sincronizar */
+function undoTo(snap){
+  const now=Date.now();
+  for(const k of KEYS){const old=new Map(snap[k].map(x=>[x.id,x]));
+    D[k]=D[k].map(x=>{const o=old.get(x.id);if(JSON.stringify(o)===JSON.stringify(x))return x;return o?Object.assign({},o,{act:now,por:C.device}):{id:x.id,act:now,por:C.device,borrado:now}})}
+  C.pend++;save();render();scheduleSync();
+}
+function toast(msg,undo){clearTimeout(S.tt);S.toast={msg,undo};renderToast();S.tt=setTimeout(()=>{S.toast=null;renderToast()},undo?6000:3500)}
+function renderToast(){const t=$('#toast');if(!S.toast){t.hidden=true;t.innerHTML='';return}t.hidden=false;t.innerHTML=`<span>${esc(S.toast.msg)}</span>${S.toast.undo?'<button data-a="undo">Deshacer</button>':''}`}
+
+/* ---------- entrar con Google (OAuth en el navegador, sin servidor) ---------- */
+const tokenOk=()=>!!(auth&&auth.token&&auth.exp>Date.now()+60000);
+const linked=()=>!!(auth&&auth.email&&C.sheetId);
+function signIn(mode){
+  if(!configured()){toast('Falta el ID de cliente de Google en config.js.');return}
+  const st=Math.random().toString(36).slice(2)+Date.now().toString(36);
+  try{localStorage.setItem(LS('oauth-state'),st)}catch(e){}
+  const p=new URLSearchParams({client_id:CLIENT_ID,redirect_uri:location.origin+location.pathname,response_type:'token',scope:SCOPES,include_granted_scopes:'true',state:st});
+  if(mode==='none')p.set('prompt','none');else if(mode==='select')p.set('prompt','select_account');
+  if(mode!=='select'&&auth&&auth.email)p.set('login_hint',auth.email);
+  location.href='https://accounts.google.com/o/oauth2/v2/auth?'+p.toString();
+}
+async function handleOAuthReturn(){
+  if(!/(^#|&)(access_token|error)=/.test(location.hash))return null;
+  const q=new URLSearchParams(location.hash.slice(1));
+  try{history.replaceState(null,'',location.pathname+location.search)}catch(e){location.hash=''}
+  let st=null;try{st=localStorage.getItem(LS('oauth-state'));localStorage.removeItem(LS('oauth-state'))}catch(e){}
+  if(!st||q.get('state')!==st)return {error:'state'};
+  if(q.get('error'))return {error:q.get('error')};
+  const token=q.get('access_token'),exp=Date.now()+(parseInt(q.get('expires_in'),10)||3600)*1000;
+  let info={};
+  try{const r=await fetch('https://openidconnect.googleapis.com/v1/userinfo',{headers:{Authorization:'Bearer '+token}});if(r.ok)info=await r.json()}catch(e){}
+  const changed=auth&&auth.email&&info.email&&auth.email!==info.email;
+  auth={token,exp,email:info.email||(auth&&auth.email)||'',name:info.given_name||info.name||(auth&&auth.name)||''};
+  jset('google',auth);
+  if(changed){remoteRows={};C.lector=false;S.sheetState='';saveC()}
+  return {ok:true,changed};
+}
+
+/* ---------- Google Sheets ---------- */
+class ApiError extends Error{constructor(status,msg,write){super(msg);this.status=status;this.write=!!write}}
+function apiMsg(status,write){
+  if(status===401)return 'La sesión de Google ha caducado. Toca para entrar de nuevo.';
+  if(status===403)return write?'Tu cuenta solo puede ver la hoja (Lector).':'Tu cuenta ('+((auth&&auth.email)||'')+') no puede abrir esta hoja.';
+  if(status===404)return 'Tu cuenta no puede abrir esta hoja, o todavía no la ha elegido en su Drive.';
+  if(status===0)return navigator.onLine===false?'Sin conexión: se guardará en Google cuando vuelva internet.':'No se ha podido conectar con Google.';
+  return 'Google ha respondido con un error ('+status+').';
+}
+async function api(url,{method='GET',body}={},write=false){
+  if(!tokenOk())throw new ApiError(401,apiMsg(401));
+  let r;
+  try{r=await fetch(url,{method,headers:Object.assign({Authorization:'Bearer '+auth.token},body?{'Content-Type':'application/json'}:{}),body:body?JSON.stringify(body):undefined,cache:'no-store'})}
+  catch(e){throw new ApiError(0,apiMsg(0))}
+  if(r.status===401){auth.exp=0;jset('google',auth)}
+  if(!r.ok)throw new ApiError(r.status,apiMsg(r.status,write),write);
+  return r.status===204?null:r.json();
+}
+const SHEETS='https://sheets.googleapis.com/v4/spreadsheets/';
+const rng=s=>encodeURIComponent(s);
+const COLS=k=>['id'].concat(TABLAS[k][1].map(f=>f[1]),['Actualizado','Por','Borrado']);
+const range=(k,n)=>`${TABLAS[k][0]}!A1:${String.fromCharCode(64+COLS(k).length)}${n||''}`;
+const toISO=ms=>ms?new Date(ms).toISOString():'';
+const fromISO=v=>{if(typeof v==='number')return v;const t=Date.parse(v||'');return isNaN(t)?0:t};
+const yes=v=>v===true||/^(true|verdadero|s[ií]|x|1)$/i.test(String(v??'').trim());
+/* si alguien edita una fecha a mano en la hoja, Google la devuelve como número de serie */
+const fromDate=v=>typeof v==='number'&&v>20000&&v<80000?new Date(Date.UTC(1899,11,30)+v*864e5).toISOString().slice(0,10):String(v??'').trim();
+function toRow(k,x){
+  const f=TABLAS[k][1];
+  if(x.borrado)return [x.id,...f.map(()=>''),toISO(x.act),x.por||'','sí'];
+  return [x.id,...f.map(([n,,t])=>t==='b'?(x[n]?'sí':''):t==='n'?(Number(x[n])||0):String(x[n]??'')),toISO(x.act),x.por||'',''];
+}
+function fromRow(k,r){
+  const f=TABLAS[k][1],n=f.length,g=i=>r[i]??'';
+  const id=String(g(0)).trim();if(!id||id==='id')return null;
+  const act=fromISO(g(n+1)),por=String(g(n+2));
+  if(yes(g(n+3)))return {id,act,por,borrado:act||Date.now()};
+  const o={id,act,por};
+  f.forEach(([key,,t],i)=>{const v=g(i+1);o[key]=t==='b'?yes(v):t==='n'?(Number(v)||0):t==='d'?fromDate(v):String(v)});
+  return o;
+}
+let remoteRows={};
+async function pull(){
+  const j=await api(SHEETS+C.sheetId+'/values:batchGet?'+KEYS.map(k=>'ranges='+rng(range(k))).join('&')+'&valueRenderOption=UNFORMATTED_VALUE');
+  const out=empty();
+  ((j&&j.valueRanges)||[]).forEach((vr,i)=>{const k=KEYS[i],rows=vr.values||[];remoteRows[k]=rows.length;const m=new Map();
+    rows.forEach(r=>{const x=fromRow(k,r);if(x&&(!m.has(x.id)||x.act>=m.get(x.id).act))m.set(x.id,x)});out[k]=[...m.values()]});
+  return out;
+}
+const sig=(k,a)=>JSON.stringify(a.slice().sort((x,y)=>x.id<y.id?-1:x.id>y.id?1:0).map(x=>toRow(k,x)));
+/* gana el cambio más reciente de cada registro */
+function merge(remote,local){
+  const out=empty();
+  for(const k of KEYS){const m=new Map(remote[k].map(x=>[x.id,x]));
+    for(const x of local[k]){const r=m.get(x.id);if(!r||(x.act||0)>(r.act||0))m.set(x.id,x)}
+    out[k]=[...m.values()]}
+  prune(out);return out;
+}
+async function pushRemote(o,remote){
+  const data=[];
+  for(const k of KEYS){
+    if(sig(k,o[k])===sig(k,remote[k]))continue;
+    const rows=[COLS(k)].concat(o[k].filter(x=>!x.borrado).concat(o[k].filter(x=>x.borrado)).map(x=>toRow(k,x)));
+    const n=rows.length;while(rows.length<(remoteRows[k]||0))rows.push(COLS(k).map(()=>''));
+    data.push({range:range(k,rows.length),values:rows});remoteRows[k]=n;
+  }
+  if(!data.length)return false;
+  await api(SHEETS+C.sheetId+'/values:batchUpdate',{method:'POST',body:{valueInputOption:'RAW',data}},true);
+  return true;
+}
+let syncT=null,syncAgain=false;
+function scheduleSync(ms=1200){if(!linked())return;clearTimeout(syncT);syncT=setTimeout(sync,ms)}
+async function sync(){
+  if(!linked()||!tokenOk()||S.sheetState==='denied'){renderTop();return}
+  if(S.syncing){syncAgain=true;return}
+  S.syncing=true;renderTop();
+  try{
+    const remote=await pull();
+    let merged=C.lector?(prune(remote),remote):merge(remote,D);
+    const changed=KEYS.some(k=>sig(k,merged[k])!==sig(k,D[k]));
+    D=merged;if(changed){save();render()}
+    if(!C.lector){
+      try{if(await pushRemote(D,remote))setTimeout(()=>scheduleSync(0),4000)}
+      catch(e){if(e.status===403&&e.write){C.lector=true;D=remote;save();render();toast('Tu cuenta solo puede ver la hoja (Lector). Los cambios de este móvil no se han guardado.')}else throw e}
+    }
+    C.pend=0;saveC();S.last=Date.now();S.err='';S.errSt=0;S.sheetState='ok';
+  }catch(e){
+    S.err=e instanceof ApiError?e.message:apiMsg(0);S.errSt=e.status||0;
+    if(e.status===404||(e.status===403&&!e.write)){S.sheetState='denied';renderOv()}
+  }finally{S.syncing=false;renderTop();if(syncAgain){syncAgain=false;scheduleSync(300)}}
+}
+setInterval(()=>{if(!document.hidden)sync()},20000);
+setInterval(()=>{if(!document.hidden)renderTop()},10000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){if(auth&&auth.email&&!tokenOk())renderTop();else sync()}});
+window.addEventListener('online',()=>sync());window.addEventListener('offline',()=>renderTop());
+
+/* ---------- la hoja: crear, comprobar, elegir con el selector de Drive ---------- */
+async function checkSheet(id){
+  const j=await api(SHEETS+id+'?fields=properties.title,sheets.properties.title');
+  const tabs=((j&&j.sheets)||[]).map(s=>s.properties.title);
+  if(!tabs.includes('Episodios')||!tabs.includes('Visitas'))throw new ApiError(400,'Esa hoja no es de Medikuak. Elige la hoja «Medikuak».');
+  const faltan=KEYS.filter(k=>!tabs.includes(TABLAS[k][0]));
+  try{  // escribir la cabecera de Familia comprueba si la cuenta es Editor
+    if(faltan.length)await api(SHEETS+id+':batchUpdate',{method:'POST',body:{requests:faltan.map(k=>({addSheet:{properties:{title:TABLAS[k][0],gridProperties:{frozenRowCount:1}}}}))}},true);
+    await api(SHEETS+id+'/values/'+rng(range('personas',1))+'?valueInputOption=RAW',{method:'PUT',body:{values:[COLS('personas')]}},true);
+    C.lector=false;
+  }catch(e){if(e.status===403)C.lector=true;else throw e}
+  saveC();
+}
+async function createSheet(){
+  const j=await api('https://sheets.googleapis.com/v4/spreadsheets',{method:'POST',body:{properties:{title:'Medikuak',locale:'es_ES',timeZone:'Europe/Madrid'},sheets:KEYS.map(k=>({properties:{title:TABLAS[k][0],gridProperties:{frozenRowCount:1}}}))}},true);
+  const id=j.spreadsheetId;
+  await api(SHEETS+id+'/values:batchUpdate',{method:'POST',body:{valueInputOption:'RAW',data:KEYS.map(k=>({range:range(k,1),values:[COLS(k)]}))}},true);
+  return id;
+}
+function linkSheet(id){C.sheetId=id;C.lector=false;remoteRows={};saveC()}
+async function connect(id,how){
+  S.busy=how==='crear'?'Creando la hoja «Medikuak» en tu Drive…':'Conectando con la hoja…';S.err='';renderOv();
+  try{
+    if(how==='crear'){id=await createSheet();linkSheet(id);
+      if(!live('redes').length)REDES0.forEach(([rid,nombre,h])=>D.redes.push(stamp({id:rid,nombre,h,logo:''})));save()}
+    else{await checkSheet(id);if(C.sheetId!==id){C.sheetId=id;remoteRows={};saveC()}}
+    S.sheetState='ok';S.busy='';render();await sync();
+    if(how!=='crear')toast(C.lector?'Conectado en modo lectura':'Hoja conectada');
+  }catch(e){S.busy='';S.err=e.message||apiMsg(0);if(e.status===403||e.status===404)S.sheetState='denied';render()}
+}
+let pickerP=null;
+function loadPicker(){
+  if(window.google&&google.picker)return Promise.resolve();
+  if(!pickerP)pickerP=new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://apis.google.com/js/api.js';
+    s.onload=()=>gapi.load('picker',{callback:res,onerror:()=>{pickerP=null;rej(new Error('picker'))}});s.onerror=()=>{pickerP=null;rej(new Error('picker'))};document.head.appendChild(s)});
+  return pickerP;
+}
+async function openPicker(){
+  if(!API_KEY){S.err='Falta la clave del selector de Google Drive (googleApiKey) en config.js.';render();return}
+  if(!tokenOk()){signIn('auto');return}
+  try{await loadPicker()}catch(e){S.err='No se ha podido abrir el selector de Google Drive. Revisa la conexión.';render();return}
+  const todas=new google.picker.DocsView(google.picker.ViewId.SPREADSHEETS).setMode(google.picker.DocsViewMode.LIST);
+  const compartidas=new google.picker.DocsView(google.picker.ViewId.SPREADSHEETS).setMode(google.picker.DocsViewMode.LIST).setOwnedByMe(false);
+  new google.picker.PickerBuilder().addView(compartidas).addView(todas).setOAuthToken(auth.token).setDeveloperKey(API_KEY).setAppId(APP_ID)
+    .setLocale('es').setTitle('Elige la hoja «Medikuak»').setCallback(d=>{if(d.action===google.picker.Action.PICKED&&d.docs&&d.docs[0])connect(d.docs[0].id,'unir')}).build().setVisible(true);
+}
+const shareLink=()=>location.origin+location.pathname+'#hoja='+C.sheetId;
+const sheetUrl=()=>'https://docs.google.com/spreadsheets/d/'+encodeURIComponent(C.sheetId)+'/edit';
+let qrLib=null;
+function loadQrLib(){
+  if(window.QRCode)return Promise.resolve();
+  if(!qrLib)qrLib=new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';s.onload=res;s.onerror=()=>{qrLib=null;rej(new Error('qr'))};document.head.appendChild(s)});
+  return qrLib;
+}
+async function makeQr(){
+  const box=$('#qrbox');if(!box||box.dataset.done)return;box.dataset.done='1';
+  try{await loadQrLib();box.innerHTML='';new QRCode(box,{text:shareLink(),width:440,height:440,correctLevel:QRCode.CorrectLevel.M})}
+  catch(e){box.innerHTML='<p class="small">No se ha podido crear el QR. Usa «Copiar enlace».</p>'}
+}
+async function logout(){
+  if(auth&&auth.token){try{fetch('https://oauth2.googleapis.com/revoke?token='+encodeURIComponent(auth.token),{method:'POST',mode:'no-cors'})}catch(e){}}
+  try{if(idb)idb.close();await new Promise(res=>{const r=indexedDB.deleteDatabase('medikuak');r.onsuccess=r.onerror=r.onblocked=()=>res();setTimeout(res,2000)})}catch(e){}
+  try{Object.keys(localStorage).filter(k=>k.startsWith('medikuak-')).forEach(k=>localStorage.removeItem(k))}catch(e){}
+  location.replace(location.pathname);
+}
+
+/* ---------- vistas principales ---------- */
+const TABS=[['inicio','Inicio','home'],['agenda','Agenda','cal'],['familia','Familia','fam'],['medicos','Médicos','med'],['mas','Más','more']];
+function syncInfo(){
+  if(!C.sheetId)return['','Sin hoja'];
+  if(!tokenOk())return['err','Sesión de Google caducada · toca para entrar'];
+  if(S.sheetState==='denied')return['err','Sin acceso a la hoja'];
+  if(navigator.onLine===false)return['warn',C.pend?`Sin conexión · ${C.pend} cambio${C.pend>1?'s':''} por enviar`:'Sin conexión · todo guardado en el móvil'];
+  if(S.syncing)return['acc','Sincronizando…'];
+  if(S.err)return['err',S.err];
+  return['ok',S.last?`Sincronizado ${hace(S.last)}`:'Conectado'];
+}
+function renderTop(){
+  const [c,t]=syncInfo();const title=TABS.find(x=>x[0]===S.tab)[1];
+  $('#top').innerHTML=`<h1>${S.tab==='inicio'?'Medikuak':esc(title)}</h1><button class="sync ${c}" ${!tokenOk()&&auth&&auth.email?'data-a="relogin"':'data-a="tab" data-v="mas"'}><i></i>${esc(t)}</button>${C.lector?`<div class="banner">${ic('lock',18)}<span>Solo lectura. Para cambiar cosas, pide que te hagan Editor de la hoja.</span></div>`:''}`;
+}
+function renderPf(){
+  const show=S.tab==='inicio'||S.tab==='agenda';
+  $('#pf').innerHTML=show?`<div class="pf">${[{id:'',nombre:'Todos'}].concat(live('personas')).map(p=>`<button class="pill" aria-pressed="${S.pf===p.id}" data-a="pf" data-v="${p.id}">${esc(p.nombre)}</button>`).join('')}</div>`:'';
+}
+const dateBlock=c=>{const d=dt(c.fecha);return `<span class="when"><small>${DIAS[d.getDay()]}</small><b>${d.getDate()}</b><small>${MES[d.getMonth()]}${c.fecha.slice(0,4)!==YEAR?' '+c.fecha.slice(2,4):''}</small></span>`};
+const rowCita=(c,timeOnly)=>`<button class="row" data-a="open" data-k="${c.k}" data-id="${c.id}">${timeOnly?`<span class="when h"><b>${esc(c.hora||'—')}</b></span>`:dateBlock(c)}<span class="txt"><span class="t">${esc(c.titulo)}</span><span class="s">${timeOnly?'':esc(c.hora||'')+' · '}${esc(c.p.nombre)} · ${esc(c.epT)}</span>${c.red?`<span class="rl">${badge(c.red)}</span>`:''}</span><span class="tag ${c.k==='visitas'?'tv':''}">${c.tipo}</span></button>`;
+
+const tareaRow=(t,corto)=>{const e=epi(t.ep);const sub=corto?'':`${esc(epPer(t.ep).nombre)} · ${esc(e?.titulo||'')}`;const esp=t.tipo==='cita'&&t.esperando?`La pediste ${esc(rel(t.esperando))}: esperando que llamen`:'';
+  return `<label class="chk"><input type="checkbox" data-a="tarea" data-id="${t.id}" aria-label="${esc(t.texto)}"><span style="flex:1"><span class="t">${esc(t.texto)}</span>${sub?`<span class="s">${sub}</span>`:''}${esp?`<span class="s">${esp}</span>`:''}${!corto&&t.por!==C.device?`<span class="s">Apuntada desde ${esc(t.por)}</span>`:''}</span>${t.tipo==='cita'?`<span class="tag tv">${t.esperando?'Esperando':'Cita'}</span>`:''}</label>`};
+function vInicio(){
+  if(!live('personas').length)return `<section class="sec"><div class="card"><p class="t">Empieza por la familia</p><p class="s">Añade a las personas cuyas citas vais a llevar. Después, desde cada una, sus episodios, visitas y pruebas. Y en Médicos, los especialistas con su teléfono.</p><button class="b1" data-a="form" data-f="persona">+ Añadir familiar</button></div></section>`;
+  const atr=live('episodios').filter(e=>e.estado==='abierto'&&e.prev&&e.prev<HOY&&fp(e.persona)&&!citas().some(c=>c.ep===e.id&&c.fecha>=HOY));
+  const sinCerrar=live('visitas').filter(v=>v.estado==='cita'&&v.fecha<HOY&&fp(epPer(v.ep).id));
+  const prox=citas().filter(c=>c.fecha>=HOY&&fp(c.p.id));
+  const esperaT=t=>t.tipo==='cita'&&!!t.esperando;
+  const tareas=live('tareas').filter(t=>!t.hecha&&fp(epPer(t.ep).id)&&!esperaT(t));
+  const pedir=live('pruebas').filter(x=>x.estado==='pedida'&&fp(epPer(x.ep).id)&&!x.esperando);
+  const espT=live('tareas').filter(t=>!t.hecha&&esperaT(t)&&fp(epPer(t.ep).id));
+  const espP=live('pruebas').filter(x=>x.estado==='pedida'&&x.esperando&&fp(epPer(x.ep).id));
+  const esperas=espT.map(t=>({k:'t',id:t.id,f:t.esperando,txt:t.texto.replace(/^pedir (una )?/i,'').replace(/^./,c=>c.toUpperCase()),ep:t.ep,m:medi(t.med)}))
+    .concat(espP.map(x=>({k:'p',id:x.id,f:x.esperando,txt:x.nombre,ep:x.ep,m:null}))).sort((a,b)=>a.f.localeCompare(b.f));
+  const late=atr.length+sinCerrar.length;
+  return `${late?`<section class="sec"><h3 style="color:var(--warn)">${ic('warn',20)} Atrasado</h3>
+${atr.map(e=>{const p=per(e.persona);const v=live('visitas').filter(x=>x.ep===e.id).sort((a,b)=>b.fecha.localeCompare(a.fecha))[0];const m=v&&medi(v.med);
+return `<div class="alert"><div class="ah">${av(p,34)}<div><p class="t">Revisión: ${esc(e.titulo)}</p><p class="s">${esc(p.nombre)} · tocaba ${esc(rel(e.prev))} y aún no hay cita</p></div></div><div class="btns">${telLink(m)}<button class="b1 warnb" data-a="form" data-f="visita" data-ep="${e.id}" data-estado="cita">Apuntar cita</button></div></div>`}).join('')}
+${sinCerrar.map(v=>{const m=medi(v.med),p=epPer(v.ep);return `<div class="alert"><div class="ah">${av(p,34)}<div><p class="t">¿Fue la cita de ${esc(m?m.esp.toLowerCase():'')}?</p><p class="s">${esc(p.nombre)} · estaba citada ${esc(rel(v.fecha))}, a las ${esc(v.hora)}</p></div></div><div class="btns"><button class="b2" data-a="form" data-f="visita" data-id="${v.id}">Cambiar fecha</button><button class="b1 warnb" data-a="vhecha" data-id="${v.id}">Sí, fue</button></div></div>`}).join('')}</section>`:''}
+<section class="sec"><h3>Próximas citas</h3><div class="list">${prox.slice(0,4).map(c=>rowCita(c)).join('')||'<p class="empty">No hay citas apuntadas.</p>'}</div>${prox.length>4?`<button class="b2" data-a="tab" data-v="agenda">Ver las ${prox.length} en la agenda</button>`:''}</section>
+<section class="sec"><h3>Por hacer</h3><div class="list">
+${tareas.map(t=>tareaRow(t)).join('')}
+${pedir.map(x=>`<button class="row" data-a="open" data-k="pruebas" data-id="${x.id}"><span class="txt"><span class="t">Pedir cita: ${esc(x.nombre)}</span><span class="s">${esc(epPer(x.ep).nombre)} · ${esc(epi(x.ep)?.titulo||'')}</span></span><span class="tag">Prueba</span></button>`).join('')}
+${tareas.length+pedir.length?'':'<p class="empty">Nada pendiente.</p>'}</div></section>
+${esperas.length?`<section class="sec"><h3>${ic('phone',20)} Esperando que te llamen</h3><div class="list">${esperas.map(e=>`<button class="row" data-a="${e.k==='t'?'pedir':'open'}" data-k="pruebas" data-id="${e.id}"><span class="txt"><span class="t">${esc(e.txt)}</span><span class="s">${esc(epPer(e.ep).nombre)} · ${esc(epi(e.ep)?.titulo||'')}</span><span class="s">La pediste ${esc(rel(e.f))}${e.m?' · '+esc(e.m.nombre):''}</span></span><span class="tag">${e.k==='t'?'Cita':'Prueba'}</span></button>`).join('')}</div><p class="hint">No depende de vosotros, así que nunca pasa a Atrasado. Cuando llamen, toca la fila y apunta la cita.</p></section>`:''}`;
+}
+function vAgenda(){
+  const cs=citas().filter(c=>fp(c.p.id)&&c.fecha>=HOY);
+  if(!cs.length)return '<p class="empty">No hay citas próximas.</p>';
+  const g={};cs.forEach(c=>(g[c.fecha]=g[c.fecha]||[]).push(c));
+  return Object.keys(g).map(f=>`<section class="sec"><h3>${f===HOY?'Hoy':f===iso(1)?'Mañana':esc(fdate(f).replace(/^./,x=>x.toUpperCase()))} <span class="s" style="font-weight:400">· ${esc(fdate(f))}</span></h3><div class="list">${g[f].map(c=>rowCita(c,true)).join('')}</div></section>`).join('')
+  +'<p class="hint">Cada cita tiene su botón «Añadir a Google Calendar». La app no pide permiso sobre tu calendario.</p>';
+}
+function vFamilia(){
+  return `<section class="sec"><div class="list">${live('personas').map(p=>{const eps=live('episodios').filter(e=>e.persona===p.id&&e.estado==='abierto');const n=citas().filter(c=>c.p.id===p.id&&c.fecha>=HOY);
+  return `<button class="row" data-a="open" data-k="personas" data-id="${p.id}">${av(p,44)}<span class="txt"><span class="t">${esc(p.nombre)}</span><span class="s">${eps.length} episodio${eps.length!==1?'s':''} abierto${eps.length!==1?'s':''}${n.length?` · próxima cita ${esc(fdate(n[0].fecha))}`:''}</span></span>${ic('chev',20)}</button>`}).join('')}</div>
+<button class="add" data-a="form" data-f="persona">+ Añadir familiar</button></section>`;
+}
+function medList(){
+  const q=S.q.trim().toLowerCase();
+  const ms=live('medicos').filter(m=>!q||[m.nombre,m.esp,m.centro].join(' ').toLowerCase().includes(q)).sort((a,b)=>a.esp.localeCompare(b.esp));
+  return ms.map(m=>`<button class="row" data-a="open" data-k="medicos" data-id="${m.id}"><span class="txt"><span class="s" style="font-weight:700;color:var(--acc)">${esc(m.esp)}</span><span class="t">${esc(m.nombre)}</span><span class="s">${esc(m.centro)}${m.tel?' · '+esc(m.tel):''}</span>${m.red?`<span class="rl">${badge(m.red)}</span>`:''}</span>${ic('chev',20)}</button>`).join('')||'<p class="empty">Ningún médico coincide.</p>';
+}
+function vMedicos(){
+  return `<section class="sec"><input class="inp" id="q" type="search" placeholder="Buscar médico, especialidad o centro" aria-label="Buscar médicos" value="${esc(S.q)}"><div class="list" id="mlist">${medList()}</div><button class="add" data-a="form" data-f="medico">+ Nuevo médico</button></section>`;
+}
+function devices(){
+  const m={};for(const k in D)live(k).forEach(x=>{if(x.por&&(!m[x.por]||m[x.por]<x.act))m[x.por]=x.act});
+  if(!m[C.device])m[C.device]=Date.now();
+  return Object.entries(m).sort((a,b)=>b[1]-a[1]);
+}
+function vMas(){
+  const n=KEYS.reduce((a,k)=>a+live(k).length,0);
+  return `<section class="sec"><h3>Tu cuenta</h3><div class="card"><p class="t">${esc(auth&&auth.email||'')}</p><p class="s">${C.lector?'Lector: puedes ver, no cambiar.':'Editor: puedes ver y cambiar.'}</p></div>
+<div class="two"><button class="b2" data-a="otra">Usar otra cuenta</button>${C.lector?'<button class="b2" data-a="recheck">Comprobar permiso</button>':'<button class="b2" data-a="syncnow">Sincronizar ahora</button>'}</div>
+${S.err?`<p class="ferr">${esc(S.err)}</p>`:S.last?`<p class="meta">Última sincronización: ${esc(new Date(S.last).toLocaleString('es-ES'))}</p>`:''}</section>
+<section class="sec"><h3>Hoja de la familia</h3><div class="card"><p class="t">Medikuak</p><p class="s">Una hoja de Google Sheets en el Drive de quien la creó, con una pestaña por tabla. Los borrados se limpian a los 30 días.</p><a href="${esc(sheetUrl())}" target="_blank" rel="noopener">Abrir en Google Sheets</a></div>
+<ol class="plain"><li>Para que entre otra persona, abre la hoja, pulsa <b>Compartir</b> y añade su correo de Google: <b>Editor</b> para cambiar o <b>Lector</b> solo para ver.</li><li>En su móvil, que abra el enlace o escanee el QR de «Conectar otro móvil».</li></ol></section>
+<section class="sec"><h3>Redes de salud y logos</h3><div class="list">${live('redes').map(r=>`<button class="row" data-a="form" data-f="red" data-id="${r.id}"><span class="txt">${badge(r.id,true)}<span class="s">${live('medicos').filter(m=>m.red===r.id).length} médicos · ${r.logo?'con logo':'sin logo: toca para ponerlo'}</span></span>${ic('chev',20)}</button>`).join('')||'<p class="empty">Ninguna todavía.</p>'}</div><button class="add" data-a="form" data-f="red">+ Otra red de salud</button></section>
+<section class="sec"><h3>Móviles conectados</h3><div class="list">${devices().map(([d,t])=>`<div class="li">${ic('phone',20)}<div><p class="t">${esc(d)}${d===C.device?' (este)':''}</p><p class="s">Último cambio ${esc(hace(t))}</p></div></div>`).join('')}</div>
+<button class="b1" data-a="open" data-k="dispositivos">${ic('qr',20)} Conectar otro móvil</button></section>
+<section class="sec"><h3>Este móvil</h3><label class="f"><span>Nombre (sale junto a lo que apuntes)</span><input id="devname" value="${esc(C.device)}" maxlength="30"></label><button class="b2" data-a="devname">Guardar nombre</button></section>
+<section class="sec"><h3>Privacidad</h3><ul class="plain">
+<li>Google solo deja a la app abrir los archivos que ella crea o que tú eliges en tu Drive. No ve el resto de tu Drive ni tus otras hojas.</li>
+<li>Los datos de salud solo están en la hoja y en la copia de este móvil. No van en la dirección web ni en el código de la app.</li>
+<li>Copia en este móvil: ${n} registros, para usarla sin conexión.</li></ul>
+<button class="b2 danger" data-a="logout">${S.confirm==='logout'?'Pulsa otra vez: se borra la copia de este móvil':'Cerrar sesión y borrar la copia de este móvil'}</button>
+<p class="meta">La hoja de Google no se toca: lo que ya se ha sincronizado sigue allí.</p></section>`;
+}
+const VIEWS={inicio:vInicio,agenda:vAgenda,familia:vFamilia,medicos:vMedicos,mas:vMas};
+
+/* ---------- fichas (hojas que suben) ---------- */
+const ADD=[['visita','Visita','med','hecha'],['visita','Cita','cal','cita'],['prueba','Prueba','flask',''],['med','Fármaco','pill',''],['tarea','Tarea','task',''],['doc','Informe','doc','']];
+const metaLine=x=>`<p class="meta">Apuntado desde ${esc(x.por)} · ${esc(hace(x.act))}</p>`;
+const medRow=r=>{const m=medi(r.medico);return `<button class="li" data-a="form" data-f="med" data-id="${r.id}">${ic('pill',20)}<div><p class="t">${esc(r.farmaco)}</p><p class="s">${esc(r.pauta)}${m?' · '+esc(m.nombre):''}</p><p class="s">${esc(epi(r.ep)?.titulo||'')}${r.fin?` · hasta ${esc(fshort(r.fin))}`:' · sin fecha de fin'}</p></div></button>`};
+function epCard(e){
+  const n=citas().find(c=>c.ep===e.id&&c.fecha>=HOY);
+  const esps=[...new Set(live('visitas').filter(v=>v.ep===e.id).map(v=>medi(v.med)?.esp).filter(Boolean))];
+  const nx=n?`<span class="next">${ic('cal',18)} ${esc(fdate(n.fecha))}${n.hora?', '+esc(n.hora):''} · ${esc(n.titulo)}</span>`
+    :e.estado==='abierto'&&e.prev?`<span class="next ${e.prev<HOY?'late':'soft'}">${ic('cal',18)} Revisión prevista en ${esc(fmonth(e.prev))}${e.prev<HOY?' · atrasada':''}</span>`:'';
+  return `<button class="card" data-a="open" data-k="episodios" data-id="${e.id}"><span class="t">${esc(e.titulo)}</span><span class="s">${e.estado==='abierto'?'Desde':'Del'} ${esc(fshort(e.ini))}${e.fin?' al '+esc(fshort(e.fin)):''}${esps.length?' · '+esc(esps.join(', ')):''}</span>${nx}</button>`;
+}
+const P={};
+P.personas=s=>{const p=get('personas',s.id);if(!p)return null;
+  const eps=live('episodios').filter(e=>e.persona===p.id),ab=eps.filter(e=>e.estado==='abierto'),ce=eps.filter(e=>e.estado!=='abierto');
+  const meds=live('med').filter(r=>epi(r.ep)?.persona===p.id&&(!r.fin||r.fin>=HOY));
+  return{title:p.nombre,kick:'Familia',body:`<div class="who">${av(p,56)}<p class="s">${ab.length} episodio${ab.length!==1?'s':''} abierto${ab.length!==1?'s':''} · ${meds.length} tratamiento${meds.length!==1?'s':''} en curso</p></div>
+<section class="sec"><h3>Episodios abiertos</h3>${ab.map(epCard).join('')||'<p class="empty">Ninguno abierto.</p>'}<button class="add" data-a="form" data-f="episodio" data-persona="${p.id}">+ Nuevo episodio</button></section>
+<section class="sec"><h3>Tratamientos en curso</h3><div class="list">${meds.map(medRow).join('')||'<p class="empty">Ninguno.</p>'}</div></section>
+${ce.length?`<section class="sec"><button class="b2" data-a="closed">${S.closed?'Ocultar':'Ver'} episodios cerrados (${ce.length})</button>${S.closed?ce.map(epCard).join(''):''}</section>`:''}
+<div class="foot"><button class="b2" data-a="form" data-f="persona" data-id="${p.id}">Cambiar nombre</button></div>`}};
+P.episodios=s=>{const e=get('episodios',s.id);if(!e)return null;const p=per(e.persona),abierto=e.estado==='abierto';
+  const vs=live('visitas').filter(v=>v.ep===e.id),ps=live('pruebas').filter(x=>x.ep===e.id),ts=live('tareas').filter(t=>t.ep===e.id&&!t.hecha),rs=live('med').filter(r=>r.ep===e.id),ds=live('docs').filter(d=>d.ep===e.id);
+  const next=citas().filter(c=>c.ep===e.id&&c.fecha>=HOY);
+  const hist=[];
+  vs.filter(v=>v.estado==='hecha').forEach(v=>{const m=medi(v.med);
+    const ch=ps.filter(x=>x.vis===v.id).map(x=>`<span>Pidió: ${esc(x.nombre.toLowerCase())}</span>`).concat(rs.filter(r=>r.vis===v.id).map(r=>`<span>Pautó: ${esc(r.farmaco)}</span>`),ds.filter(d=>d.vis===v.id).map(d=>`<span>Informe</span>`)).join('');
+    hist.push([v.fecha,`<button class="hi" data-a="open" data-k="visitas" data-id="${v.id}"><span class="rail"><i></i><b></b></span><span class="hb"><span class="s">${esc(fshort(v.fecha))} · Visita</span><span class="t">${esc(m?`${m.esp} · ${m.nombre}`:'Visita')}</span>${m&&m.red?`<span class="rl">${badge(m.red)}</span>`:''}${v.dijo?`<span class="q">${esc(v.dijo)}</span>`:''}${ch?`<span class="chips">${ch}</span>`:''}</span></button>`])});
+  ps.filter(x=>(x.estado==='hecha'||x.estado==='resultado')&&x.fecha).forEach(x=>hist.push([x.fecha,`<button class="hi" data-a="open" data-k="pruebas" data-id="${x.id}"><span class="rail"><i></i><b></b></span><span class="hb"><span class="s">${esc(fshort(x.fecha))} · Prueba</span><span class="t">${esc(x.nombre)}</span>${x.res?`<span class="q">${esc(x.res)}</span>`:'<span class="s">Sin resultado todavía</span>'}</span></button>`]));
+  hist.sort((a,b)=>b[0].localeCompare(a[0]));
+  hist.push(['',`<div class="hi"><span class="rail"><i class="o"></i></span><span class="hb plain"><span class="s">${esc(fshort(e.ini))} · Empieza</span>${e.notas?`<span class="q">${esc(e.notas)}</span>`:''}</span></div>`]);
+  const sig=next.map(c=>rowCita(c)).join('')+ps.filter(x=>x.estado==='pedida').map(x=>`<button class="row" data-a="open" data-k="pruebas" data-id="${x.id}"><span class="txt"><span class="t">${x.esperando?'Esperando cita':'Pedir cita'}: ${esc(x.nombre)}</span><span class="s">${x.esperando?`La pediste ${esc(rel(x.esperando))}, que llamen`:'Prueba sin cita'}</span></span><span class="tag">Prueba</span></button>`).join('')
+    +ts.map(t=>tareaRow(t,true)).join('');
+  return{title:e.titulo,kick:`${p.nombre} · ${abierto?'Abierto':'Cerrado'}`,body:`
+${abierto&&e.prev&&!next.length?`<div class="next ${e.prev<HOY?'late':'soft'}">${ic('cal',18)} Revisión prevista en ${esc(fmonth(e.prev))}${e.prev<HOY?' · atrasada, sin cita':''}</div>`:''}
+<section class="sec"><h3>Lo siguiente</h3><div class="list">${sig||'<p class="empty">Nada pendiente en este episodio.</p>'}</div></section>
+${abierto?`<section class="sec"><h3>Añadir a este episodio</h3><div class="grid3">${ADD.map(([f,l,i,est])=>`<button class="gbtn" data-a="form" data-f="${f}" data-ep="${e.id}" data-estado="${est}">${ic(i,22)}${l}</button>`).join('')}</div></section>`:''}
+<section class="sec"><h3>Historia</h3><div class="hist">${hist.map(h=>h[1]).join('')}</div></section>
+${rs.length?`<section class="sec"><h3>Medicación</h3><div class="list">${rs.map(medRow).join('')}</div></section>`:''}
+${ds.length?`<section class="sec"><h3>Informes</h3><div class="list">${ds.map(d=>`<a class="li" href="${esc(d.url)}" target="_blank" rel="noopener">${ic('doc',20)}<div><p class="t">${esc(d.titulo)}</p><p class="s">${esc(fshort(d.fecha))} · se abre en Google Drive</p></div>${ic('ext',18)}</a>`).join('')}</div></section>`:''}
+<div class="foot">${metaLine(e)}<button class="b2" data-a="form" data-f="episodio" data-id="${e.id}">Editar episodio</button>
+<button class="b2" data-a="${abierto?'cerrarEp':'abrirEp'}" data-id="${e.id}">${abierto?'Cerrar este episodio':'Reabrir este episodio'}</button></div>`}};
+P.visitas=s=>{const v=get('visitas',s.id);if(!v)return null;const m=medi(v.med),e=epi(v.ep),p=epPer(v.ep);const c=citas().find(x=>x.id===v.id);
+  const ps=live('pruebas').filter(x=>x.vis===v.id),rs=live('med').filter(r=>r.vis===v.id),ts=live('tareas').filter(t=>t.vis===v.id);
+  return{title:m?`${m.esp} · ${m.nombre}`:'Visita',kick:v.estado==='cita'?'Cita':'Visita',body:`${m&&m.red?`<div>${badge(m.red,true)}</div>`:''}<dl class="kv"><dt>Quién</dt><dd><button data-a="open" data-k="personas" data-id="${p.id}">${esc(p.nombre)}</button></dd>
+<dt>Episodio</dt><dd><button data-a="open" data-k="episodios" data-id="${e?.id||''}">${esc(e?.titulo||'—')}</button></dd>
+<dt>Cuándo</dt><dd>${esc(fdate(v.fecha))}${v.hora?', '+esc(v.hora):''} · ${esc(rel(v.fecha))}</dd><dt>Dónde</dt><dd>${esc(m?.centro||'—')}</dd></dl>
+${v.dijo?`<section class="sec"><h3>Qué dijeron</h3><p class="q" style="margin:0">${esc(v.dijo)}</p></section>`:''}
+${ps.length+rs.length+ts.length?`<section class="sec"><h3>Salió de esta visita</h3><div class="list">${ps.map(x=>`<button class="li" data-a="open" data-k="pruebas" data-id="${x.id}">${ic('flask',20)}<div><p class="t">${esc(x.nombre)}</p><p class="s">Prueba · ${esc(x.estado)}</p></div></button>`).join('')}${rs.map(medRow).join('')}${ts.map(t=>`<div class="li">${ic('task',20)}<div><p class="t">${esc(t.texto)}</p><p class="s">${t.hecha?'Hecha':'Pendiente'}</p></div></div>`).join('')}</div></section>`:''}
+<div class="foot">${v.estado==='cita'?`<button class="b1" data-a="vhecha" data-id="${v.id}">${ic('check',18)} Ya fue: apuntar qué dijeron</button>${c?`<a class="b2" href="${esc(gcal(c))}" target="_blank" rel="noopener">${ic('cal',18)} Añadir a Google Calendar</a>`:''}`:''}
+${telLink(m)}<button class="b2" data-a="form" data-f="visita" data-id="${v.id}">Editar</button><button class="b2 danger" data-a="borrar" data-k="visitas" data-id="${v.id}">Borrar visita</button>${metaLine(v)}</div>`}};
+const PST=[['pedida','Pedida'],['citada','Citada'],['hecha','Hecha'],['resultado','Resultado']];
+P.pruebas=s=>{const x=get('pruebas',s.id);if(!x)return null;const d=s.d,i=PST.findIndex(a=>a[0]===x.estado);const c=citas().find(y=>y.id===x.id);
+  return{title:x.nombre,kick:`Prueba · ${epPer(x.ep).nombre} · ${epi(x.ep)?.titulo||''}`,body:`${x.red?`<div>${badge(x.red,true)}</div>`:''}
+<div class="steps" role="group" aria-label="Estado de la prueba">${PST.map(([v,l],j)=>`<button class="st ${j<i?'done':j===i?'cur':''}" aria-pressed="${j===i}" data-a="pestado" data-id="${x.id}" data-v="${v}"><span class="c">${j<i?ic('check',14):''}</span>${l}</button>`).join('')}</div>
+${x.estado!=='pedida'?`<div class="two">${inp(d,'fecha','Fecha','date')}${inp(d,'hora','Hora','time')}</div>${sel(d,'red','Dónde: red de salud',redOpts())}${inp(d,'lugar','Centro')}`:`${x.esperando?`<div class="next soft">${ic('phone',18)} La pediste ${esc(rel(x.esperando))}. Esperando que llamen.</div>`:`<button class="choice" data-a="pespera" data-id="${x.id}">${ic('phone',28)}<span><span class="t">La he pedido, me llamarán</span><br><span class="s">Pasa a «Esperando que te llamen». No cuenta como atrasado.</span></span></button>`}<p class="hint">Cuando te den cita, pulsa «Citada» y apunta fecha, hora y lugar.</p>`}
+${x.estado==='citada'?ta(d,'prep','Preparación','Ayunas, llegar antes…'):''}
+${x.estado==='hecha'||x.estado==='resultado'?ta(d,'res','Resultado','Qué dice el informe'):''}
+${s.err?`<p class="ferr">${esc(s.err)}</p>`:''}
+<div class="foot">${x.estado!=='pedida'?'<button class="b1" data-a="save">Guardar</button>':''}
+${c?`<a class="b2" href="${esc(gcal(c))}" target="_blank" rel="noopener">${ic('cal',18)} Añadir a Google Calendar</a>`:''}
+<button class="b2 danger" data-a="borrar" data-k="pruebas" data-id="${x.id}">Borrar prueba</button>${metaLine(x)}</div>`}};
+P.medicos=s=>{const m=get('medicos',s.id);if(!m)return null;
+  const ps=[...new Set(live('visitas').filter(v=>v.med===m.id).map(v=>epPer(v.ep).nombre))];
+  return{title:m.nombre,kick:m.esp,body:`${m.red?`<div>${badge(m.red,true)}</div>`:''}<dl class="kv"><dt>Centro</dt><dd>${esc(m.centro||'—')}</dd><dt>Teléfono</dt><dd>${esc(m.tel||'—')}</dd><dt>Atiende a</dt><dd>${esc(ps.join(', ')||'—')}</dd>${m.notas?`<dt>Notas</dt><dd>${esc(m.notas)}</dd>`:''}</dl>
+<div class="foot">${telLink(m)}<button class="b2" data-a="form" data-f="medico" data-id="${m.id}">Editar</button><button class="b2 danger" data-a="borrar" data-k="medicos" data-id="${m.id}">Borrar médico</button>${metaLine(m)}</div>`}};
+P.pedircita=s=>{const t=get('tareas',s.id);if(!t)return null;const m=medi(t.med);
+  return{title:t.texto,kick:`${epPer(t.ep).nombre} · ${epi(t.ep)?.titulo||''}`,body:`${t.esperando?`<div class="next soft">${ic('phone',18)} La pediste ${esc(rel(t.esperando))}. Esperando que llamen.</div>`:''}
+<button class="choice" data-a="tcita" data-id="${t.id}">${ic('cal',28)}<span><span class="t">Ya tengo cita</span><br><span class="s">Apunta el día y la hora. La tarea se cierra sola y la cita sale en Inicio y en la agenda.</span></span></button>
+${t.esperando?'':`<button class="choice" data-a="tespera" data-id="${t.id}">${ic('phone',28)}<span><span class="t">La he pedido, me llamarán</span><br><span class="s">Sale de «Por hacer» y pasa a «Esperando que te llamen». No cuenta como atrasado.</span></span></button>`}
+<button class="choice" data-a="thecha" data-id="${t.id}">${ic('check',28)}<span><span class="t">Ya no hace falta</span><br><span class="s">Se marca como hecha sin apuntar ninguna cita.</span></span></button>
+${m?`<div class="foot">${telLink(m)}<p class="meta">${esc(m.nombre)} · ${esc(m.esp)}${m.centro?' · '+esc(m.centro):''}</p></div>`:''}`}};
+P.nuevo=()=>({title:'Añadir',body:`<div class="grid3">${[['visita','Visita que ya fue','med','hecha'],['visita','Cita','cal','cita'],['prueba','Prueba','flask',''],['tarea','Tarea','task',''],['med','Medicamento','pill',''],['episodio','Episodio','doc','']].map(([f,l,i,e])=>`<button class="gbtn" data-a="form" data-f="${f}" data-estado="${e}">${ic(i,22)}${l}</button>`).join('')}</div>
+<div class="two"><button class="b2" data-a="form" data-f="medico">+ Médico</button><button class="b2" data-a="form" data-f="persona">+ Familiar</button></div>`});
+P.dispositivos=()=>({title:'Conectar otro móvil',body:`<div class="qrbox"><div id="qrbox" class="qrimg" aria-label="Código QR con el enlace"><p class="small">Creando el QR…</p></div><code class="code">${esc(shareLink())}</code><button class="b2" data-a="copy">Copiar enlace</button></div>
+<section class="sec"><h3>En el otro móvil</h3><ol class="plain"><li>Escanea el QR o abre el enlace.</li><li>Entra con la cuenta de Google que vaya a usar la app.</li><li>Si es una cuenta distinta de la que creó la hoja, elige la hoja «Medikuak» en su Drive cuando la app lo pida. Es una sola vez: así Google da permiso a la app solo para ese archivo.</li><li>Pon nombre al móvil.</li></ol></section>
+<div class="banner">${ic('lock',18)}<span>El enlace solo dice qué hoja usar, no da acceso. La hoja tiene que estar compartida con esa cuenta: Editor para cambiar, Lector solo para ver.</span></div>`});
+
+/* ---------- formularios ---------- */
+const fv=(d,n)=>esc(d[n]??'');
+const inp=(d,n,l,type='text',ph='')=>`<label class="f"><span>${l}</span><input name="${n}" type="${type}" value="${fv(d,n)}"${ph?` placeholder="${esc(ph)}"`:''}></label>`;
+const ta=(d,n,l,ph='')=>`<label class="f"><span>${l}</span><textarea name="${n}" rows="3"${ph?` placeholder="${esc(ph)}"`:''}>${fv(d,n)}</textarea></label>`;
+const sel=(d,n,l,opts)=>`<label class="f"><span>${l}</span><select name="${n}" data-rr="1">${opts.map(([v,t])=>`<option value="${esc(v)}"${d[n]===v?' selected':''}>${esc(t)}</option>`).join('')}</select></label>`;
+const seg=(d,n,l,opts)=>`<div class="f"><span>${l}</span><div class="seg" role="radiogroup" aria-label="${esc(l)}">${opts.map(([v,t])=>`<button type="button" role="radio" aria-checked="${d[n]===v}" data-a="dset" data-n="${n}" data-v="${v}">${esc(t)}</button>`).join('')}</div></div>`;
+function epField(s){
+  const d=s.d;if(s.ep){const e=epi(s.ep);return `<div class="f"><span>Episodio</span><p class="fixed">${esc(e?.titulo)} · ${esc(per(e?.persona).nombre)}</p></div>`}
+  const ps=live('personas');if(!ps.length)return `<p class="hint">Primero añade a alguien de la familia.</p><button type="button" class="b2" data-a="form" data-f="persona">+ Añadir familiar</button>`;
+  if(!d.persona)d.persona=S.pf||ps[0]?.id||'';
+  const eps=live('episodios').filter(e=>e.persona===d.persona&&(e.estado==='abierto'||e.id===d.ep));
+  if(d.ep!=='__new'&&!eps.some(e=>e.id===d.ep))d.ep=eps[0]?.id||'__new';
+  return `<div class="f"><span>¿Para quién?</span><div class="pills">${ps.map(p=>`<button type="button" class="pill" aria-pressed="${d.persona===p.id}" data-a="dset" data-n="persona" data-v="${p.id}">${esc(p.nombre)}</button>`).join('')}</div></div>
+${sel(d,'ep','¿De qué episodio?',eps.map(e=>[e.id,e.titulo]).concat([['__new','+ Episodio nuevo…']]))}${d.ep==='__new'?inp(d,'epNuevo','Nombre del episodio nuevo','text','Dolor de rodilla'):''}`;
+}
+function medField(d,n,l,opcional){
+  const ms=live('medicos').sort((a,b)=>a.esp.localeCompare(b.esp));
+  if(d[n]===undefined)d[n]=opcional?'':(ms[0]?.id||'__new');
+  return sel(d,n,l,(opcional?[['','Sin médico']]:[]).concat(ms.map(m=>[m.id,`${m.nombre} · ${m.esp}`]),[['__new','+ Médico nuevo…']]))
+   +(d[n]==='__new'?`<div class="two">${inp(d,'mNombre','Nombre','text','Dra. García')}${inp(d,'mEsp','Especialidad','text','Cardiología')}</div>${sel(d,'mRed','Red de salud',redOpts())}`:'')
+   +(d[n]&&d[n]!=='__new'?`<div class="rl" style="gap:8px;align-items:center">${badge(medi(d[n])?.red)}<span class="hint">${esc(medi(d[n])?.centro||'')}</span></div>`:'');
+}
+const errP=s=>s.err?`<p class="ferr">${esc(s.err)}</p>`:'';
+const saveBtn=(l='Guardar')=>`<div class="foot"><button class="b1" data-a="save">${l}</button></div>`;
+P['form-visita']=s=>{const d=s.d,hecha=d.estado==='hecha';
+  return{title:s.id?'Editar visita':hecha?'Nueva visita':'Nueva cita',body:`${s.id?'':seg(d,'estado','Tipo',[['hecha','Ya fue'],['cita','Es una cita futura']])}${epField(s)}${medField(d,'med','Médico')}
+<div class="two">${inp(d,'fecha','Fecha','date')}${inp(d,'hora',hecha?'Hora (opcional)':'Hora','time')}</div>
+${hecha?ta(d,'dijo','¿Qué dijeron?','Diagnóstico, tratamiento, qué vigilar'):''}
+${hecha&&!s.id?`${ta(d,'pruebas','Pruebas que pide (una por línea)','Resonancia de rodilla')}<div class="two">${inp(d,'farmaco','Medicamento','text','Ibuprofeno 600 mg')}${inp(d,'pauta','Cómo tomarlo','text','1 cada 8 h')}</div>`:''}
+${!s.id?ta(d,'tareas','Qué hay que hacer (una por línea)','Pedir cita en 3 meses'):''}${errP(s)}${saveBtn(hecha?'Guardar visita':'Guardar cita')}`}};
+P['form-prueba']=s=>{const d=s.d;return{title:'Nueva prueba',body:`${epField(s)}${inp(d,'nombre','Prueba','text','Analítica de sangre')}${seg(d,'estado','Estado',[['pedida','Pedida, sin cita'],['citada','Ya tiene cita']])}
+${d.estado==='citada'?`<div class="two">${inp(d,'fecha','Fecha','date')}${inp(d,'hora','Hora','time')}</div>${sel(d,'red','Dónde: red de salud',redOpts())}${inp(d,'lugar','Centro','text','Hospital universitario')}${ta(d,'prep','Preparación','Ayunas…')}`:''}${errP(s)}${saveBtn()}`}};
+P['form-tarea']=s=>{const d=s.d;return{title:'Nueva tarea',body:`${epField(s)}${seg(d,'tipo','Tipo',[['','Otra cosa'],['cita','Pedir una cita']])}${inp(d,'texto','Qué hay que hacer','text',d.tipo==='cita'?'Pedir revisión de dermatología':'Recoger el informe')}${d.tipo==='cita'?medField(d,'med','Con quién',true)+'<p class="hint">Al marcarla, la app te pregunta si ya tienes cita y la apunta.</p>':''}${errP(s)}${saveBtn()}`}};
+P['form-med']=s=>{const d=s.d;return{title:s.id?'Editar medicamento':'Nuevo medicamento',body:`${s.id?'':epField(s)}${inp(d,'farmaco','Medicamento y dosis','text','Ibuprofeno 600 mg')}${inp(d,'pauta','Cómo tomarlo','text','1 cada 8 h si hay dolor')}${medField(d,'medico','Lo pautó',true)}
+<div class="two">${inp(d,'ini','Desde','date')}${inp(d,'fin','Hasta (vacío si sigue)','date')}</div>${errP(s)}${saveBtn()}${s.id?`<div class="foot"><button class="b2 danger" data-a="borrar" data-k="med" data-id="${s.id}">Borrar medicamento</button></div>`:''}`}};
+P['form-doc']=s=>({title:'Añadir informe',body:`${epField(s)}${inp(s.d,'titulo','Nombre','text','Informe de la resonancia')}${inp(s.d,'url','Enlace de Google Drive','url','https://drive.google.com/…')}
+<p class="hint">Sube el PDF o la foto a Drive y pega aquí su enlace. El informe se abre con los permisos de Drive de cada uno: la app no lo guarda ni lo ve.</p>${errP(s)}${saveBtn()}`});
+P['form-episodio']=s=>{const d=s.d;return{title:s.id?'Editar episodio':'Nuevo episodio',body:`${sel(d,'persona','¿De quién?',live('personas').map(p=>[p.id,p.nombre]))}${inp(d,'titulo','Nombre','text','Dolor de rodilla')}
+${inp(d,'prev','Revisión prevista (aproximada, sin cita)','date')}<p class="hint">Si llega esta fecha sin cita apuntada, sale en «Atrasado».</p>${ta(d,'notas','Cómo empezó','Qué pasó, desde cuándo')}${errP(s)}${saveBtn()}`}};
+P['form-red']=s=>{const d=s.d;
+  const img=/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(d.logo||'');
+  return{title:s.id?'Red de salud':'Nueva red de salud',body:`${inp(d,'nombre','Nombre','text','Osakidetza')}
+<div class="f"><span>Logo</span><div class="logoprev"><span class="red big ${esc(d.h||'r0')}">${img?`<img src="${d.logo}" alt="">`:`<b aria-hidden="true">${esc((d.nombre||'?')[0])}</b>`}${esc(d.nombre||'Nombre')}</span></div>
+<label class="b2" style="cursor:pointer;position:relative">Elegir imagen del logo<input type="file" name="logofile" accept="image/png,image/jpeg,image/webp,image/svg+xml" style="position:absolute;opacity:0;width:1px;height:1px"></label>
+${img?'<button class="b2" data-a="dset" data-n="logo" data-v="">Quitar logo</button>':''}
+<p class="hint">Usa la imagen oficial que descargues de su web o una foto del logo. La app la reduce a un icono pequeño y la guarda en la hoja, para que la veáis los dos.</p></div>
+${seg(d,'h','Color si no hay logo',[['r1','Verde'],['r2','Azul'],['r3','Rojo'],['r4','Morado']])}${errP(s)}${saveBtn()}`}};
+P['form-medico']=s=>{const d=s.d;return{title:s.id?'Editar médico':'Nuevo médico',body:`${inp(d,'nombre','Nombre','text','Dra. García')}${inp(d,'esp','Especialidad','text','Cardiología')}${sel(d,'red','Red de salud',redOpts())}${inp(d,'centro','Centro','text','Hospital universitario')}${inp(d,'tel','Teléfono','tel','910 000 000')}${ta(d,'notas','Notas','Cómo pedir cita, horario…')}${errP(s)}${saveBtn()}`}};
+P['form-persona']=s=>({title:s.id?'Cambiar nombre':'Nuevo familiar',body:`${inp(s.d,'nombre','Nombre','text','Lucía')}${errP(s)}${saveBtn()}`});
+
+function initDraft(s){
+  const d={};const f=s.t.slice(5);
+  if(f==='visita'){if(s.id){const v=get('visitas',s.id);Object.assign(d,{estado:v.estado,ep:v.ep,persona:epi(v.ep)?.persona,med:v.med,fecha:v.fecha,hora:v.hora,dijo:v.dijo})}
+    else{d.estado=s.estado||'hecha';d.fecha=d.estado==='hecha'?HOY:'';d.hora='';const last=s.ep&&live('visitas').filter(v=>v.ep===s.ep).sort((a,b)=>b.fecha.localeCompare(a.fecha))[0];if(last)d.med=last.med}}
+  if(f==='prueba'){d.estado='pedida';const v=s.ep&&live('visitas').filter(x=>x.ep===s.ep).sort((a,b)=>b.fecha.localeCompare(a.fecha))[0];d.red=(v&&medi(v.med)?.red)||''}
+  if(f==='red'){if(s.id){const r=get('redes',s.id);Object.assign(d,{nombre:r.nombre,h:r.h,logo:r.logo})}else d.h='r4'}
+  if(f==='med'){if(s.id){const r=get('med',s.id);Object.assign(d,{farmaco:r.farmaco,pauta:r.pauta,medico:r.medico,ini:r.ini,fin:r.fin})}else d.ini=HOY}
+  if(f==='episodio'){if(s.id){const e=get('episodios',s.id);Object.assign(d,{persona:e.persona,titulo:e.titulo,prev:e.prev,notas:e.notas})}else d.persona=s.persona||S.pf||live('personas')[0]?.id}
+  if(f==='medico'&&s.id){const m=get('medicos',s.id);Object.assign(d,{nombre:m.nombre,esp:m.esp,red:m.red||'',centro:m.centro,tel:m.tel,notas:m.notas})}
+  if(f==='persona'&&s.id)d.nombre=get('personas',s.id).nombre;
+  return d;
+}
+function mkEp(s){const d=s.d;if(s.ep)return s.ep;if(d.ep!=='__new')return d.ep;
+  const e=stamp({id:uid(),persona:d.persona,titulo:d.epNuevo.trim(),estado:'abierto',ini:HOY,fin:'',prev:'',notas:''});D.episodios.push(e);return e.id}
+function mkMed(d,n){if(d[n]!=='__new')return d[n]||'';const m=stamp({id:uid(),nombre:d.mNombre.trim(),esp:(d.mEsp||'').trim()||'Sin especialidad',red:d.mRed||'',centro:'',tel:'',notas:''});D.medicos.push(m);return m.id}
+function saveForm(s){
+  const d=s.d,f=s.t,T=x=>String(x??'').trim();
+  const fail=m=>{s.err=m;renderSheets();return false};
+  const epOk=()=>s.ep||(d.persona&&(d.ep!=='__new'||T(d.epNuevo)));
+  const close=()=>{S.sheets.pop();};
+  if(f==='pruebas'){const x=get('pruebas',s.id);if(x.estado==='citada'&&!d.fecha)return fail('Pon la fecha de la cita');
+    close();return write(()=>{Object.assign(x,{fecha:d.fecha||'',hora:d.hora||'',red:d.red||'',lugar:T(d.lugar),prep:T(d.prep),res:T(d.res)});stamp(x)},'Prueba guardada')}
+  if(f==='form-red'){if(!T(d.nombre))return fail('Escribe el nombre');
+    close();return write(()=>{const o={nombre:T(d.nombre),h:d.h||'r4',logo:d.logo||''};if(s.id)stamp(Object.assign(get('redes',s.id),o));else D.redes.push(stamp(Object.assign({id:uid()},o)))},'Red de salud guardada')}
+  if(f==='form-visita'){
+    if(!epOk())return fail('Escribe el nombre del episodio nuevo');
+    if(d.med==='__new'&&!T(d.mNombre))return fail('Escribe el nombre del médico');
+    if(!d.fecha)return fail('Pon la fecha');if(d.estado==='cita'&&!d.hora)return fail('Pon la hora de la cita');
+    if(d.estado==='cita'&&d.fecha<HOY)return fail('Una cita futura no puede tener fecha pasada');
+    close();return write(()=>{const ep=mkEp(s),m=mkMed(d,'med');
+      if(s.id){const v=get('visitas',s.id);Object.assign(v,{ep,med:m,fecha:d.fecha,hora:d.hora||'',estado:d.estado,dijo:T(d.dijo)});stamp(v)}
+      else{const v=stamp({id:uid(),ep,med:m,fecha:d.fecha,hora:d.hora||'',estado:d.estado,dijo:d.estado==='hecha'?T(d.dijo):''});D.visitas.push(v);
+        if(d.estado==='hecha'){lines(d.pruebas).forEach(t=>D.pruebas.push(stamp({id:uid(),ep,vis:v.id,nombre:t,estado:'pedida',fecha:'',hora:'',lugar:'',prep:'',res:''})));
+          if(T(d.farmaco))D.med.push(stamp({id:uid(),ep,vis:v.id,medico:m,farmaco:T(d.farmaco),pauta:T(d.pauta),ini:d.fecha,fin:''}))}
+        lines(d.tareas).forEach(t=>D.tareas.push(stamp({id:uid(),ep,vis:v.id,texto:t,tipo:esCita(t)?'cita':'',med:esCita(t)?m:'',esperando:'',hecha:false})));
+        if(s.fromTask){const t=get('tareas',s.fromTask);if(t){t.hecha=true;t.cita=v.id;stamp(t)}}}},s.id?'Visita guardada':s.fromTask?'Cita apuntada y tarea cerrada':d.estado==='cita'?'Cita apuntada':'Visita guardada')}
+  if(f==='form-prueba'){if(!epOk())return fail('Escribe el nombre del episodio nuevo');if(!T(d.nombre))return fail('Escribe qué prueba es');if(d.estado==='citada'&&!d.fecha)return fail('Pon la fecha de la cita');
+    close();return write(()=>{D.pruebas.push(stamp({id:uid(),ep:mkEp(s),vis:'',nombre:T(d.nombre),estado:d.estado,fecha:d.estado==='citada'?d.fecha:'',hora:d.estado==='citada'?d.hora||'':'',red:d.red||'',lugar:T(d.lugar),prep:T(d.prep),res:''}))},'Prueba apuntada')}
+  if(f==='form-tarea'){if(!epOk())return fail('Escribe el nombre del episodio nuevo');if(!T(d.texto))return fail('Escribe la tarea');
+    if(d.med==='__new'&&!T(d.mNombre))return fail('Escribe el nombre del médico');
+    close();return write(()=>{D.tareas.push(stamp({id:uid(),ep:mkEp(s),vis:'',texto:T(d.texto),tipo:d.tipo||'',med:d.tipo==='cita'?mkMed(d,'med'):'',esperando:'',hecha:false}))},'Tarea apuntada')}
+  if(f==='form-med'){if(!s.id&&!epOk())return fail('Escribe el nombre del episodio nuevo');if(!T(d.farmaco))return fail('Escribe el medicamento');if(d.medico==='__new'&&!T(d.mNombre))return fail('Escribe el nombre del médico');
+    close();return write(()=>{const m=mkMed(d,'medico');if(s.id){const r=get('med',s.id);Object.assign(r,{farmaco:T(d.farmaco),pauta:T(d.pauta),medico:m,ini:d.ini||'',fin:d.fin||''});stamp(r)}
+      else D.med.push(stamp({id:uid(),ep:mkEp(s),vis:'',medico:m,farmaco:T(d.farmaco),pauta:T(d.pauta),ini:d.ini||HOY,fin:d.fin||''}))},'Medicamento guardado')}
+  if(f==='form-doc'){if(!epOk())return fail('Escribe el nombre del episodio nuevo');if(!T(d.titulo))return fail('Pon un nombre al informe');if(!/^https:\/\/(drive|docs)\.google\.com\//.test(T(d.url)))return fail('Pega un enlace de Google Drive (empieza por https://drive.google.com/)');
+    close();return write(()=>{D.docs.push(stamp({id:uid(),ep:mkEp(s),vis:'',titulo:T(d.titulo),url:T(d.url),fecha:HOY}))},'Informe añadido')}
+  if(f==='form-episodio'){if(!d.persona)return fail('Primero añade a alguien de la familia');if(!T(d.titulo))return fail('Pon un nombre al episodio');
+    close();return write(()=>{if(s.id){const e=get('episodios',s.id);Object.assign(e,{persona:d.persona,titulo:T(d.titulo),prev:d.prev||'',notas:T(d.notas)});stamp(e)}
+      else{const e=stamp({id:uid(),persona:d.persona,titulo:T(d.titulo),estado:'abierto',ini:HOY,fin:'',prev:d.prev||'',notas:T(d.notas)});D.episodios.push(e);S.sheets.push({t:'episodios',id:e.id,d:{}});S.anim=S.sheets.length-1}},s.id?'Episodio guardado':'Episodio creado')}
+  if(f==='form-medico'){if(!T(d.nombre)||!T(d.esp))return fail('Pon nombre y especialidad');
+    close();return write(()=>{const o={nombre:T(d.nombre),esp:T(d.esp),red:d.red||'',centro:T(d.centro),tel:T(d.tel),notas:T(d.notas)};if(s.id)stamp(Object.assign(get('medicos',s.id),o));else D.medicos.push(stamp(Object.assign({id:uid()},o)))},'Médico guardado')}
+  if(f==='form-persona'){if(!T(d.nombre))return fail('Escribe el nombre');
+    close();return write(()=>{if(s.id)stamp(Object.assign(get('personas',s.id),{nombre:T(d.nombre)}));else D.personas.push(stamp({id:uid(),nombre:T(d.nombre),h:live('personas').length%5+1}))},'Familiar guardado')}
+}
+
+/* ---------- pintar ---------- */
+function renderSheets(){
+  const out=[];S.sheets=S.sheets.filter(s=>P[s.t]);
+  S.sheets.forEach((s,i)=>{const r=P[s.t](s);if(!r){return}
+    out.push(`<div class="scrim" data-a="close" style="z-index:${40+i*2}"></div><section class="sheet${S.anim===i?' in':''}" role="dialog" aria-modal="true" aria-label="${esc(r.title)}" style="z-index:${41+i*2}"><div class="grab" aria-hidden="true"></div><div class="sh"><h2>${r.kick?`<span class="k">${esc(r.kick)}</span>`:''}${esc(r.title)}</h2><button class="x" data-a="close" aria-label="Cerrar">${ic('x',22)}</button></div>${r.body}</section>`)});
+  $('#sheets').innerHTML=out.join('');S.anim=-1;if($('#qrbox'))makeQr();
+  document.body.style.overflow=S.sheets.length?'hidden':'';
+}
+const MARK=`<svg class="mark" viewBox="0 0 84 84" aria-hidden="true"><rect x="6" y="12" width="72" height="66" rx="16" fill="var(--accbg)"/><rect x="6" y="12" width="72" height="20" rx="10" fill="var(--acc)"/><path d="M26 6v14M58 6v14" stroke="var(--acc)" stroke-width="6" stroke-linecap="round"/><path d="M42 42v24M30 54h24" stroke="var(--acc)" stroke-width="8" stroke-linecap="round"/></svg>`;
+function ovHTML(){
+  const tick=t=>`<li>${ic('check',22)}<span>${t}</span></li>`;
+  const err=S.err?`<p class="ferr">${esc(S.err)}</p>`:'';
+  if(!configured())return `${MARK}<h2>Falta configurar la app</h2><p>Pon el ID de cliente de Google en <code>config.js</code>. El README del repositorio explica cómo.</p>`;
+  if(S.busy)return `${MARK}<h2>${esc(S.busy)}</h2><p class="small">Un momento.</p>`;
+  if(!auth||!auth.email)return `${MARK}<h2>Las citas médicas de la familia, en tu bolsillo</h2><p>Visitas, pruebas, tratamientos y próximas citas de todos, en una hoja de tu Google Drive que compartes con quien quieras.</p>
+<ul class="ticks">${tick('La app solo podrá abrir la hoja que ella cree o la que tú elijas en tu Drive.')}${tick('Nada más: ni el resto de tu Drive ni tus otras hojas.')}${tick('Sin contraseñas: entras con tu cuenta de Google y puedes quitarle el permiso cuando quieras.')}</ul>
+${C.sheetId?'<p class="small">Este enlace es de una hoja compartida. Entra con la cuenta de Google con la que te la compartieron.</p>':''}
+<button class="b1" data-a="login">Entrar con Google</button>${err}`;
+  if(!C.sheetId)return `<h2>¿Es la primera vez en la familia?</h2><p class="small">Cuenta: ${esc(auth.email)}</p>
+<button class="choice" data-a="crear">${ic('sheet',28)}<span><span class="t">Crear la hoja de la familia</span><br><span class="s">Se crea «Medikuak» en tu Drive. Luego la compartes con quien quieras.</span></span></button>
+<button class="choice" data-a="picker">${ic('join',28)}<span><span class="t">Unirme a la hoja que ya usa alguien</span><br><span class="s">Tienen que habértela compartido. La eliges en tu Drive (o abre el enlace o QR de su móvil).</span></span></button>
+${err}<button class="b2" data-a="otra">Usar otra cuenta</button>`;
+  if(S.sheetState==='denied')return `${ic('lock',48)}<h2>Esta cuenta no puede abrir la hoja</h2><p><b>${esc(auth.email)}</b> no tiene la hoja compartida, o todavía no la ha elegido en su Drive.</p>
+<ol class="plain"><li>Pide a quien la creó que la comparta con esta cuenta (en Google Sheets, botón Compartir).</li><li>Después pulsa «Elegir la hoja en mi Drive».</li></ol>
+<button class="b1" data-a="picker">Elegir la hoja en mi Drive</button><button class="b2" data-a="otra">Usar otra cuenta</button><button class="b2" data-a="otrahoja">Crear o elegir otra hoja</button>${err}`;
+  if(!tokenOk()&&!S.last&&!live('personas').length)return `${MARK}<h2>Entra de nuevo con Google</h2><p>La sesión ha caducado antes de terminar de conectar la hoja.</p><button class="b1" data-a="relogin">Entrar con Google</button>`;
+  if(!C.device)return `<h2>¿Cómo llamamos a este móvil?</h2><p>Así veréis quién apuntó cada cosa.</p><label class="f"><span>Nombre del móvil</span><input id="devIn" value="${esc(auth.name?'Móvil de '+auth.name:'')}" maxlength="30" placeholder="Móvil de Ana"></label><button class="b1" data-a="empezar">Empezar</button>`;
+  return '';
+}
+function renderOv(){const o=$('#ov'),h=ovHTML();if(!h){o.hidden=true;o.innerHTML='';return}o.hidden=false;o.innerHTML=`<div class="onb">${h}</div>`}
+function render(){
+  renderTop();renderPf();$('#main').innerHTML=VIEWS[S.tab]();
+  $('#tabs').innerHTML=TABS.map(([k,l,i])=>`<button data-a="tab" data-v="${k}"${S.tab===k?' aria-current="page"':''}>${ic(i,24)}${l}</button>`).join('');
+  $('#fab').innerHTML=ic('plus',28);renderSheets();renderOv();renderToast();
+}
+function push(s){s.d=s.d||{};S.sheets.push(s);S.anim=S.sheets.length-1;if(s.t.startsWith('form-'))s.d=initDraft(s);renderSheets();
+  const f=$('#sheets section:last-of-type input:not([type=date]):not([type=time]), #sheets section:last-of-type textarea');if(f&&s.t.startsWith('form-')&&!s.id)setTimeout(()=>f.focus({preventScroll:true}),280)}
+
+/* ---------- eventos ---------- */
+document.addEventListener('click',ev=>{
+  const el=ev.target.closest('[data-a]');if(!el)return;
+  const a=el.dataset.a,id=el.dataset.id,top=S.sheets[S.sheets.length-1];S.confirm=a===S.confirm?S.confirm:(['logout','reset'].includes(a)?S.confirm:'');
+  if(a==='tab'){S.tab=el.dataset.v;S.sheets=[];window.scrollTo(0,0);render()}
+  else if(a==='pf'){S.pf=el.dataset.v;render()}
+  else if(a==='close'){S.sheets.pop();renderSheets()}
+  else if(a==='open'){const k=el.dataset.k;if(!id&&k!=='dispositivos')return;let d={};if(k==='pruebas'){const x=get('pruebas',id);d={fecha:x.fecha,hora:x.hora,lugar:x.lugar,prep:x.prep,res:x.res}}push({t:k,id,d})}
+  else if(a==='nuevo'){if(C.lector)return toast('Solo lectura: tu cuenta es Lector en esta hoja.');push({t:'nuevo'})}
+  else if(a==='form'){if(C.lector)return toast('Solo lectura: tu cuenta es Lector en esta hoja.');
+    if(top&&top.t==='nuevo')S.sheets.pop();push({t:'form-'+el.dataset.f,id,ep:el.dataset.ep||'',estado:el.dataset.estado||'',persona:el.dataset.persona||''})}
+  else if(a==='dset'){top.d[el.dataset.n]=el.dataset.v;if(el.dataset.n==='persona')delete top.d.ep;top.err='';renderSheets()}
+  else if(a==='save')saveForm(top);
+  else if(a==='undo'){const u=S.toast&&S.toast.undo;S.toast=null;if(u)u();else renderToast()}
+  else if(a==='tarea'){ev.preventDefault();const t=get('tareas',id);if(t.tipo==='cita'){if(C.lector)return toast('Solo lectura: tu cuenta es Lector en esta hoja.');push({t:'pedircita',id});return}write(()=>{t.hecha=true;stamp(t)},`Hecho: ${t.texto}`)}
+  else if(a==='vhecha'){const v=get('visitas',id);if(write(()=>{v.estado='hecha';stamp(v)},'Visita marcada como hecha')){S.sheets=S.sheets.filter(s=>!(s.t==='visitas'&&s.id===id));push({t:'form-visita',id})}}
+  else if(a==='pestado'){const x=get('pruebas',id),v=el.dataset.v;if(x.estado===v)return;write(()=>{x.estado=v;if(v==='hecha'&&!x.fecha)x.fecha=HOY;stamp(x)},`${x.nombre}: ${PST.find(p=>p[0]===v)[1].toLowerCase()}`);const d=top.d;d.fecha=x.fecha;d.hora=x.hora;renderSheets()}
+  else if(a==='borrar'){const k=el.dataset.k,x=get(k,id);S.sheets.pop();write(()=>{x.borrado=Date.now();stamp(x)},{visitas:'Visita borrada',pruebas:'Prueba borrada',medicos:'Médico borrado',med:'Medicamento borrado'}[k])}
+  else if(a==='cerrarEp'||a==='abrirEp'){const e=get('episodios',id);write(()=>{Object.assign(e,a==='cerrarEp'?{estado:'cerrado',fin:HOY}:{estado:'abierto',fin:''});stamp(e)},a==='cerrarEp'?`Episodio cerrado: ${e.titulo}`:'Episodio reabierto')}
+  else if(a==='tcita'){if(C.lector)return toast('Solo lectura: tu cuenta es Lector en esta hoja.');const t=get('tareas',id);if(top&&top.t==='pedircita')S.sheets.pop();push({t:'form-visita',ep:t.ep,estado:'cita',fromTask:t.id});const n=S.sheets[S.sheets.length-1];if(t.med){n.d.med=t.med;renderSheets()}}
+  else if(a==='pedir')push({t:'pedircita',id});
+  else if(a==='tespera'){const t=get('tareas',id);S.sheets.pop();write(()=>{t.esperando=HOY;stamp(t)},'Apuntado: esperando que te llamen')}
+  else if(a==='thecha'){const t=get('tareas',id);S.sheets.pop();write(()=>{t.hecha=true;stamp(t)},`Hecho: ${t.texto}`)}
+  else if(a==='pespera'){const x=get('pruebas',id);write(()=>{x.esperando=HOY;stamp(x)},'Apuntado: esperando que te llamen')}
+  else if(a==='closed'){S.closed=!S.closed;renderSheets()}
+  else if(a==='copy'){const l=shareLink();try{navigator.clipboard.writeText(l).then(()=>toast('Enlace copiado'),()=>toast('No se pudo copiar: cópialo a mano'))}catch(e){toast('No se pudo copiar: cópialo a mano')}}
+  else if(a==='devname'){const v=$('#devname').value.trim();if(!v)return toast('Escribe un nombre');C.device=v.slice(0,30);saveC();toast('Nombre guardado');render()}
+  else if(a==='logout'){if(S.confirm!=='logout'){S.confirm='logout';render();return}logout()}
+  else if(a==='login')signIn(auth&&auth.email?'auto':'select');
+  else if(a==='relogin')signIn('auto');
+  else if(a==='otra')signIn('select');
+  else if(a==='crear')connect('','crear');
+  else if(a==='picker')openPicker();
+  else if(a==='otrahoja'){C.sheetId='';S.sheetState='';S.err='';saveC();render()}
+  else if(a==='syncnow'){sync().then(()=>{toast(S.err||'Sincronizado');render()})}
+  else if(a==='recheck'){checkSheet(C.sheetId).then(()=>{render();toast(C.lector?'Sigues siendo Lector en esta hoja':'Ya puedes cambiar cosas');sync()},e=>toast(e.message))}
+  else if(a==='empezar'){const v=($('#devIn').value||'').trim();if(!v){$('#devIn').focus();return}C.device=v.slice(0,30);saveC();S.tab='inicio';render();sync()}
+});
+function onField(ev){
+  const t=ev.target;
+  if(t.id==='q'){S.q=t.value;$('#mlist').innerHTML=medList();return}
+  const top=S.sheets[S.sheets.length-1];if(!top||!t.name||!t.closest('.sheet'))return;
+  if(t.type==='file'){if(ev.type!=='change'||!t.files[0])return;toLogo(t.files[0]).then(u=>{top.d.logo=u;renderSheets()},()=>{top.err='No se pudo leer esa imagen. Prueba con un PNG o JPG.';renderSheets()});return}
+  top.d[t.name]=t.value;if(top.err){top.err='';const e=t.closest('.sheet').querySelector('.ferr');if(e)e.remove()}
+  if(ev.type==='change'&&t.dataset.rr)renderSheets();
+}
+document.addEventListener('input',onField);document.addEventListener('change',onField);
+document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&S.sheets.length){S.sheets.pop();renderSheets()}});
+
+async function startup(){
+  await loadAll();
+  const ret=await handleOAuthReturn();
+  const hm=location.hash.match(/^#hoja=([A-Za-z0-9_-]{20,})/);
+  if(hm){if(C.sheetId!==hm[1]){C.sheetId=hm[1];C.lector=false;remoteRows={};saveC()}try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}}
+  render();
+  if(ret&&ret.error){
+    if(ret.error!=='state'&&!/interaction_required|login_required|consent_required|account_selection_required/.test(ret.error)){S.err=ret.error==='access_denied'?'No se ha dado permiso a la app en Google.':'Google no ha dejado entrar ('+ret.error+').';render()}
+    return;
+  }
+  if(!ret&&auth&&auth.email&&!tokenOk()&&configured()&&navigator.onLine!==false){   // renovar la sesión sin preguntar, como mucho cada 2 minutos
+    let last=0;try{last=+(localStorage.getItem(LS('silent'))||0)}catch(e){}
+    if(Date.now()-last>120000){try{localStorage.setItem(LS('silent'),String(Date.now()))}catch(e){}signIn('none');return}
+  }
+  if(linked()&&tokenOk()){
+    if((ret&&ret.ok)||hm){
+      try{await checkSheet(C.sheetId);S.sheetState='ok'}
+      catch(e){S.err=e.message;if(e.status===403||e.status===404)S.sheetState='denied';render();return}
+    }
+    await sync();render();
+  }
+}
+startup();
+}
+</script>
+</body>
+</html>

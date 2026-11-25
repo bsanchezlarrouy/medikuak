@@ -1,2 +1,48 @@
-# medikuak
-Medikuak
+# Medikuak
+
+Citas médicas de la familia: visitas, pruebas, medicación, tareas e informes, organizados por persona y episodio. Se usa desde el móvil y funciona sin conexión.
+
+- **Web pública:** `index.html` (HTML + CSS + JS, sin servidor) en GitHub Pages.
+- **Datos privados:** una hoja de Google Sheets llamada «Medikuak», creada por la propia app en el Drive de quien la crea. Tiene una pestaña por tabla: Familia, Redes, Medicos, Episodios, Visitas, Pruebas, Medicacion, Tareas e Informes.
+- **Acceso:** cada persona entra con su cuenta de Google. Solo puede entrar quien tenga la hoja compartida: Editor para cambiar cosas, Lector solo para ver.
+- **Permiso mínimo:** la app pide `drive.file`, así que solo puede abrir la hoja que ella crea o la que el usuario elige con el selector de Google Drive. No ve el resto del Drive.
+- **Sin conexión:** copia en el móvil (IndexedDB). Cada registro guarda «Actualizado» y gana el cambio más reciente. Los borrados se marcan y se limpian a los 30 días. Sincroniza al abrir, al volver a la app, al recuperar la conexión y cada 20 s.
+
+## Archivos
+
+| Archivo | Qué es |
+| --- | --- |
+| `index.html` | Toda la app |
+| `config.js` | ID de cliente de Google y clave del selector de Drive (nada secreto) |
+| `manifest.webmanifest`, `icon-*.png` | Para añadirla a la pantalla de inicio |
+
+## Puesta en marcha (una vez)
+
+Se reutiliza el mismo proyecto de Google Cloud que la lista de la compra. No hay que crear otro.
+
+1. **GitHub Pages.** En el repositorio: Settings → Pages → *Deploy from a branch* → rama `main`, carpeta `/ (root)`. La app queda en `https://bsanchezlarrouy.github.io/medikuak/`.
+2. **Cliente OAuth** (Google Cloud Console → APIs y servicios → Credenciales → el cliente «Aplicación web» de la lista de la compra):
+   - *Orígenes de JavaScript autorizados:* `https://bsanchezlarrouy.github.io` (ya está).
+   - *URI de redirección autorizados:* añadir `https://bsanchezlarrouy.github.io/medikuak/` (con la barra final).
+3. **Selector de Google Drive (Google Picker).** Solo hace falta para que entre una cuenta distinta de la que creó la hoja.
+   - APIs y servicios → Biblioteca → **Google Picker API** → Habilitar.
+   - Credenciales → Crear credenciales → **Clave de API**. En la clave:
+     - *Restricciones de aplicación:* Sitios web → `https://bsanchezlarrouy.github.io/medikuak/*`
+     - *Restricciones de API:* solo **Google Picker API**.
+   - Pega la clave en `config.js`, en `googleApiKey`. Es pública por diseño: no da acceso a ningún dato.
+4. **Usuarios de prueba.** Pantalla de consentimiento de OAuth → Usuarios de prueba: añade el correo de cada cuenta que vaya a entrar.
+
+## Primer uso
+
+1. En tu móvil, abre la app → **Entrar con Google** → **Crear la hoja de la familia** → pon nombre al móvil.
+2. Abre la hoja (Más → Abrir en Google Sheets) → **Compartir** → añade el correo de la otra persona como **Editor**.
+3. En su móvil: Más → **Conectar otro móvil** en el tuyo, y que escanee el QR. Entra con su cuenta y, cuando la app lo pida, elige la hoja «Medikuak» en su Drive (solo la primera vez).
+4. En cada móvil: menú del navegador → **Añadir a pantalla de inicio**.
+
+## Notas
+
+- El enlace del QR lleva el id de la hoja después de `#`, así que el navegador no lo envía a GitHub. El enlace no da acceso por sí solo.
+- **Cerrar sesión** (en Más) revoca el permiso de Google y borra la copia de ese móvil. La hoja no se toca.
+- Cada sesión de Google dura una hora. Al caducar, la app intenta renovarla sola; si no puede, el aviso de arriba dice «toca para entrar».
+- Las columnas «(id)» de la hoja enlazan con otras pestañas. Se puede leer y corregir texto en la hoja, pero no cambies los ids ni la columna «Logo (no tocar)».
+- Los informes se guardan como enlace de Google Drive. Cada persona los abre con sus propios permisos de Drive.
