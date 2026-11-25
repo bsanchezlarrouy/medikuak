@@ -150,7 +150,7 @@ h2,h3{margin:0}h3{font-size:18px}
 .small{font-size:14px;color:var(--mute)}
 .acct{display:flex;gap:14px;align-items:center;width:100%;min-height:64px;padding:8px 4px;border:0;border-bottom:1px solid var(--line);background:none;text-align:left}
 .qrbox{display:flex;flex-direction:column;align-items:center;gap:10px}
-.qrimg{background:#fff;padding:12px;border-radius:14px;line-height:0;min-height:60px;display:flex;align-items:center;justify-content:center}.qrimg img,.qrimg canvas{width:220px;height:220px}.qrimg .small{line-height:1.4}
+.qrimg{background:#fff;padding:12px;border-radius:14px;line-height:0;min-height:60px;display:flex;align-items:center;justify-content:center}.qrimg svg{width:220px;height:220px;display:block}.qrimg .small{line-height:1.4}
 .ferr+.b2,.onb .b2{min-height:46px}
 .code{display:block;padding:10px 12px;border-radius:10px;background:var(--chip);font-size:14px;overflow-wrap:anywhere}
 .sw{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:10px 16px;border:0;border-bottom:1px solid var(--line);background:none;text-align:left}
@@ -176,6 +176,7 @@ h2,h3{margin:0}h3{font-size:18px}
 <div id="toast" role="status" aria-live="polite" hidden></div>
 
 <script src="config.js"></script>
+<script src="vendor/qrcode.js"></script>
 <script>
 {
 const $=s=>document.querySelector(s);
@@ -483,15 +484,10 @@ async function openPicker(){
 }
 const shareLink=()=>location.origin+location.pathname+'#hoja='+C.sheetId;
 const sheetUrl=()=>'https://docs.google.com/spreadsheets/d/'+encodeURIComponent(C.sheetId)+'/edit';
-let qrLib=null;
-function loadQrLib(){
-  if(window.QRCode)return Promise.resolve();
-  if(!qrLib)qrLib=new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';s.onload=res;s.onerror=()=>{qrLib=null;rej(new Error('qr'))};document.head.appendChild(s)});
-  return qrLib;
-}
-async function makeQr(){
+/* QR generado en el propio móvil con vendor/qrcode.js: no se descarga código de fuera */
+function makeQr(){
   const box=$('#qrbox');if(!box||box.dataset.done)return;box.dataset.done='1';
-  try{await loadQrLib();box.innerHTML='';new QRCode(box,{text:shareLink(),width:440,height:440,correctLevel:QRCode.CorrectLevel.M})}
+  try{const q=qrcode(0,'M');q.addData(shareLink());q.make();box.innerHTML=q.createSvgTag({cellSize:6,margin:2,scalable:true,alt:'Código QR con el enlace de Medikuak'})}
   catch(e){box.innerHTML='<p class="small">No se ha podido crear el QR. Usa «Copiar enlace».</p>'}
 }
 async function logout(){

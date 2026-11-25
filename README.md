@@ -15,6 +15,7 @@ Citas médicas de la familia: visitas, pruebas, medicación, tareas e informes, 
 | `index.html` | Toda la app |
 | `config.js` | ID de cliente de Google y clave del selector de Drive (nada secreto) |
 | `manifest.webmanifest`, `icon-*.png` | Para añadirla a la pantalla de inicio |
+| `vendor/qrcode.js` | Generador de códigos QR ([qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator), MIT), guardado aquí para no cargar código de terceros |
 
 ## Puesta en marcha (una vez)
 
@@ -43,6 +44,8 @@ Si alguien nuevo tiene que entrar, añade su correo en *Test users* y comparte c
 4. En cada móvil: menú del navegador → **Añadir a pantalla de inicio**.
 
 ## Notas
+
+- La app solo se conecta a servicios de Google. Todo su código está en este repositorio; lo único que carga de fuera es el selector de Google Drive, que es de Google.
 
 - El enlace del QR lleva el id de la hoja después de `#`, así que el navegador no lo envía a GitHub. El enlace no da acceso por sí solo.
 - **Cerrar sesión** (en Más) revoca el permiso de Google y borra la copia de ese móvil. La hoja no se toca.
