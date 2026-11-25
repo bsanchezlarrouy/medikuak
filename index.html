@@ -55,7 +55,7 @@ h2,h3{margin:0}h3{font-size:18px}
 .tag{flex:none;font-size:12px;font-weight:700;padding:3px 8px;border-radius:6px;background:var(--chip);color:var(--mute)}
 .top .sync+.sync{margin-left:6px}
 .lockb{display:inline-flex;vertical-align:-2px;color:var(--mute);margin-left:4px}
-.tag.tv{background:var(--accbg);color:var(--acc)}.tag.ti{background:light-dark(#EEE7F6,#2E2944);color:light-dark(#5A3F8A,#C8BEF0)}.tag.ta{background:light-dark(#E2EFE6,#1D3326);color:light-dark(#2F5D3A,#A6D8B0)}
+.tag.tv{background:var(--accbg);color:var(--acc)}.tag.tu{background:light-dark(#F7E2E2,#3F2222);color:light-dark(#8A2F2F,#F2B0B0)}.tag.ti{background:light-dark(#EEE7F6,#2E2944);color:light-dark(#5A3F8A,#C8BEF0)}.tag.ta{background:light-dark(#E2EFE6,#1D3326);color:light-dark(#2F5D3A,#A6D8B0)}
 .rl{display:flex;margin-top:4px}
 .red{display:inline-flex;align-items:center;gap:6px;padding:2px 9px 2px 2px;border-radius:8px;background:var(--rb);color:var(--ri);font-size:13px;font-weight:700;line-height:1.2;white-space:nowrap}
 .red b,.red img{width:22px;height:22px;border-radius:6px;flex:none}
@@ -236,7 +236,7 @@ const TABLAS={
   redes:['Redes',[['nombre','Nombre'],['h','Color'],['logo','Logo (no tocar)']]],
   medicos:['Medicos',[['nombre','Nombre'],['esp','Especialidad'],['red','Red (id)'],['centro','Centro'],['tel','Teléfono'],['notas','Notas']]],
   episodios:['Episodios',[['persona','Persona (id)'],['titulo','Título'],['estado','Estado'],['ini','Inicio','d'],['fin','Fin','d'],['prev','Revisión prevista','d'],['notas','Notas'],['privado','Privado','b']]],
-  visitas:['Visitas',[['ep','Episodio (id)'],['tipo','Tipo'],['med','Médico (id)'],['fecha','Fecha','d'],['hora','Hora'],['estado','Estado'],['prep','Preparación'],['dijo','Qué dijeron']]],
+  visitas:['Visitas',[['ep','Episodio (id)'],['tipo','Tipo'],['med','Médico (id)'],['fecha','Fecha','d'],['hora','Hora'],['estado','Estado'],['red','Red (id)'],['lugar','Lugar'],['prep','Preparación'],['dijo','Qué dijeron']]],
   pruebas:['Pruebas',[['ep','Episodio (id)'],['vis','Visita (id)'],['tipo','Tipo'],['nombre','Prueba'],['estado','Estado'],['esperando','Pedida el','d'],['red','Red (id)'],['fecha','Fecha','d'],['hora','Hora'],['lugar','Lugar'],['prep','Preparación'],['res','Resultado']]],
   med:['Medicacion',[['ep','Episodio (id)'],['vis','Visita (id)'],['medico','Médico (id)'],['farmaco','Fármaco'],['pauta','Pauta'],['ini','Inicio','d'],['fin','Fin','d']]],
   tareas:['Tareas',[['ep','Episodio (id)'],['vis','Visita (id)'],['texto','Tarea'],['tipo','Tipo'],['med','Médico (id)'],['esperando','Pedida el','d'],['hecha','Hecha','b'],['cita','Cita (id)']]],
@@ -308,10 +308,13 @@ function toLogo(file){return new Promise((ok,ko)=>{const fr=new FileReader();fr.
   for(const N of [96,72,56,40]){const c=document.createElement('canvas');c.width=c.height=N;const x=c.getContext('2d');const k=Math.min(N/im.width,N/im.height),w=im.width*k,h=im.height*k;x.drawImage(im,(N-w)/2,(N-h)/2,w,h);const u=c.toDataURL('image/png');if(u.length<45000)return ok(u)}
   ko(new Error('grande'))};im.src=fr.result};fr.readAsDataURL(file)})}
 const esCita=t=>/^pedir (una )?(cita|revisi)/i.test(t);
-const TIPO_V={'':'Consulta',intervencion:'Intervención'},TIPO_P={'':'Prueba',analitica:'Analítica'};
+const TIPO_V={'':'Consulta',intervencion:'Intervención',urgencias:'Urgencias'},TIPO_P={'':'Prueba',analitica:'Analítica'};
 const tipoV=v=>TIPO_V[v.tipo||'']||'Consulta',tipoP=x=>TIPO_P[x.tipo||'']||'Prueba';
-const TAGC={'Consulta':'tv','Intervención':'ti','Prueba':'','Analítica':'ta'};
+const TAGC={'Consulta':'tv','Intervención':'ti','Urgencias':'tu','Prueba':'','Analítica':'ta'};
 const tagT=t=>`<span class="tag ${TAGC[t]||''}">${t}</span>`;
+/* título y red de una visita: las urgencias pueden no tener médico, y entonces cuenta el hospital */
+const vTitulo=v=>{const m=medi(v.med);if(v.tipo==='urgencias')return 'Urgencias'+(v.lugar?' · '+v.lugar:m?' · '+m.nombre:'');return m?`${m.esp} · ${m.nombre}`:'Visita'};
+const vRed=v=>v.red||(medi(v.med)||{}).red||'';
 const telLink=m=>m&&m.tel?`<a class="b2 tel" href="tel:${esc(m.tel.replace(/\s/g,''))}">${ic('phone',18)}<span>Llamar<small>${esc(m.tel)}</small></span></a>`:'';
 
 function citas(){
@@ -647,7 +650,7 @@ ${hayPin()?`<div class="list"><button class="sw" role="switch" aria-checked="${C
 const VIEWS={inicio:vInicio,agenda:vAgenda,familia:vFamilia,medicos:vMedicos,mas:vMas};
 
 /* ---------- fichas (hojas que suben) ---------- */
-const ADD=[['visita','Consulta','med','hecha',''],['visita','Cita','cal','cita',''],['visita','Intervención','cut','cita','intervencion'],['prueba','Prueba','flask','',''],['prueba','Analítica','drop','','analitica'],['med','Fármaco','pill','',''],['tarea','Tarea','task','',''],['doc','Informe','doc','','']];
+const ADD=[['visita','Consulta','med','hecha',''],['visita','Cita','cal','cita',''],['visita','Intervención','cut','cita','intervencion'],['visita','Urgencias','warn','hecha','urgencias'],['prueba','Prueba','flask','',''],['prueba','Analítica','drop','','analitica'],['med','Fármaco','pill','',''],['tarea','Tarea','task','',''],['doc','Informe','doc','','']];
 const metaLine=x=>`<p class="meta">Apuntado desde ${esc(x.por)} · ${esc(hace(x.act))}</p>`;
 const medRow=r=>{const m=medi(r.medico);return `<button class="li" data-a="form" data-f="med" data-id="${r.id}">${ic('pill',20)}<div><p class="t">${esc(r.farmaco)}</p><p class="s">${esc(r.pauta)}${m?' · '+esc(m.nombre):''}</p><p class="s">${esc(epi(r.ep)?.titulo||'')}${r.fin?` · hasta ${esc(fshort(r.fin))}`:' · sin fecha de fin'}</p></div></button>`};
 function epCard(e){
@@ -685,7 +688,7 @@ P.episodios=s=>{const e=get('episodios',s.id);if(!e)return null;const p=per(e.pe
   const hist=[];
   vs.filter(v=>v.estado==='hecha').forEach(v=>{const m=medi(v.med);
     const ch=ps.filter(x=>x.vis===v.id).map(x=>`<span>Pidió: ${esc(x.nombre.toLowerCase())}</span>`).concat(rs.filter(r=>r.vis===v.id).map(r=>`<span>Pautó: ${esc(r.farmaco)}</span>`),ds.filter(d=>d.vis===v.id).map(d=>`<span>Informe</span>`)).join('');
-    hist.push([v.fecha,`<button class="hi" data-a="open" data-k="visitas" data-id="${v.id}"><span class="rail"><i></i><b></b></span><span class="hb"><span class="s">${esc(fshort(v.fecha))} · ${tipoV(v)}</span><span class="t">${esc(m?`${m.esp} · ${m.nombre}`:'Visita')}</span>${m&&m.red?`<span class="rl">${badge(m.red)}</span>`:''}${v.dijo?`<span class="q">${esc(v.dijo)}</span>`:''}${ch?`<span class="chips">${ch}</span>`:''}</span></button>`])});
+    hist.push([v.fecha,`<button class="hi" data-a="open" data-k="visitas" data-id="${v.id}"><span class="rail"><i></i><b></b></span><span class="hb"><span class="s">${esc(fshort(v.fecha))} · ${tipoV(v)}</span><span class="t">${esc(vTitulo(v))}</span>${vRed(v)?`<span class="rl">${badge(vRed(v))}</span>`:''}${v.dijo?`<span class="q">${esc(v.dijo)}</span>`:''}${ch?`<span class="chips">${ch}</span>`:''}</span></button>`])});
   ps.filter(x=>(x.estado==='hecha'||x.estado==='resultado')&&x.fecha).forEach(x=>hist.push([x.fecha,`<button class="hi" data-a="open" data-k="pruebas" data-id="${x.id}"><span class="rail"><i></i><b></b></span><span class="hb"><span class="s">${esc(fshort(x.fecha))} · ${tipoP(x)}</span><span class="t">${esc(x.nombre)}</span>${x.res?`<span class="q">${esc(x.res)}</span>`:'<span class="s">Sin resultado todavía</span>'}</span></button>`]));
   /* medicación e informes que no salen de una visita también van a la línea temporal */
   const hiMed=(f,txt,r)=>[f,`<button class="hi" data-a="form" data-f="med" data-id="${r.id}"><span class="rail"><i class="m"></i><b></b></span><span class="hb"><span class="s">${esc(fshort(f))} · Medicación</span><span class="t">${txt}</span>${r.pauta?`<span class="q">${esc(r.pauta)}</span>`:''}</span></button>`];
@@ -706,11 +709,11 @@ ${ds.length?`<section class="sec"><h3>Informes</h3><div class="list">${ds.map(d=
 <button class="b2" data-a="${abierto?'cerrarEp':'abrirEp'}" data-id="${e.id}">${abierto?'Cerrar este episodio':'Reabrir este episodio'}</button>${privBtn('episodios',e)}</div>`}};
 P.visitas=s=>{const v=get('visitas',s.id);if(!v)return null;const m=medi(v.med),e=epi(v.ep),p=epPer(v.ep);const c=citas().find(x=>x.id===v.id);
   const ps=live('pruebas').filter(x=>x.vis===v.id),rs=live('med').filter(r=>r.vis===v.id),ts=live('tareas').filter(t=>t.vis===v.id);
-  return{title:m?`${m.esp} · ${m.nombre}`:'Visita',kick:tipoV(v)+(v.estado==='cita'?' · cita':''),body:`${m&&m.red?`<div>${badge(m.red,true)}</div>`:''}<dl class="kv"><dt>Quién</dt><dd><button data-a="open" data-k="personas" data-id="${p.id}">${esc(p.nombre)}</button></dd>
+  return{title:vTitulo(v),kick:tipoV(v)+(v.estado==='cita'?' · cita':''),body:`${vRed(v)?`<div>${badge(vRed(v),true)}</div>`:''}<dl class="kv"><dt>Quién</dt><dd><button data-a="open" data-k="personas" data-id="${p.id}">${esc(p.nombre)}</button></dd>
 <dt>Episodio</dt><dd><button data-a="open" data-k="episodios" data-id="${e?.id||''}">${esc(e?.titulo||'—')}</button></dd>
-<dt>Cuándo</dt><dd>${esc(fdate(v.fecha))}${v.hora?', '+esc(v.hora):''} · ${esc(rel(v.fecha))}</dd><dt>Dónde</dt><dd>${esc(m?.centro||'—')}</dd></dl>
+<dt>Cuándo</dt><dd>${esc(fdate(v.fecha))}${v.hora?', '+esc(v.hora):''} · ${esc(rel(v.fecha))}</dd><dt>Dónde</dt><dd>${esc(v.lugar||m?.centro||'—')}</dd>${v.tipo==='urgencias'&&m?`<dt>Atendió</dt><dd>${esc(m.nombre)}</dd>`:''}</dl>
 ${v.prep?`<section class="sec"><h3>Preparación</h3><p class="q" style="margin:0">${esc(v.prep)}</p></section>`:''}
-${v.dijo?`<section class="sec"><h3>${v.tipo==='intervencion'?'Cómo fue':'Qué dijeron'}</h3><p class="q" style="margin:0">${esc(v.dijo)}</p></section>`:''}
+${v.dijo?`<section class="sec"><h3>${v.tipo==='intervencion'?'Cómo fue':v.tipo==='urgencias'?'Qué pasó':'Qué dijeron'}</h3><p class="q" style="margin:0">${esc(v.dijo)}</p></section>`:''}
 ${ps.length+rs.length+ts.length?`<section class="sec"><h3>Salió de esta visita</h3><div class="list">${ps.map(x=>`<button class="li" data-a="open" data-k="pruebas" data-id="${x.id}">${ic('flask',20)}<div><p class="t">${esc(x.nombre)}</p><p class="s">Prueba · ${esc(x.estado)}</p></div></button>`).join('')}${rs.map(medRow).join('')}${ts.map(t=>`<div class="li">${ic('task',20)}<div><p class="t">${esc(t.texto)}</p><p class="s">${t.hecha?'Hecha':'Pendiente'}</p></div></div>`).join('')}</div></section>`:''}
 <div class="foot">${v.estado==='cita'?`<button class="b1" data-a="vhecha" data-id="${v.id}">${ic('check',18)} Ya fue: apuntar qué dijeron</button>${c?`<a class="b2" href="${esc(gcal(c))}" target="_blank" rel="noopener">${ic('cal',18)} Añadir a Google Calendar</a>`:''}`:''}
 ${telLink(m)}<button class="b2" data-a="form" data-f="visita" data-id="${v.id}">Editar</button><button class="b2 danger" data-a="borrar" data-k="visitas" data-id="${v.id}">Borrar visita</button>${metaLine(v)}</div>`}};
@@ -735,7 +738,7 @@ P.pedircita=s=>{const t=get('tareas',s.id);if(!t)return null;const m=medi(t.med)
 ${t.esperando?'':`<button class="choice" data-a="tespera" data-id="${t.id}">${ic('phone',28)}<span><span class="t">La he pedido, me llamarán</span><br><span class="s">Sale de «Por hacer» y pasa a «Esperando que te llamen». No cuenta como atrasado.</span></span></button>`}
 <button class="choice" data-a="thecha" data-id="${t.id}">${ic('check',28)}<span><span class="t">Ya no hace falta</span><br><span class="s">Se marca como hecha sin apuntar ninguna cita.</span></span></button>
 ${m?`<div class="foot">${telLink(m)}<p class="meta">${esc(m.nombre)} · ${esc(m.esp)}${m.centro?' · '+esc(m.centro):''}</p></div>`:''}`}};
-P.nuevo=()=>({title:'Añadir',body:`<div class="grid4">${[['visita','Consulta que ya fue','med','hecha',''],['visita','Cita','cal','cita',''],['visita','Intervención','cut','cita','intervencion'],['prueba','Prueba','flask','',''],['prueba','Analítica','drop','','analitica'],['tarea','Tarea','task','',''],['med','Medica­mento','pill','',''],['episodio','Episodio','doc','','']].map(([f,l,i,e,tp])=>`<button class="gbtn" data-a="form" data-f="${f}" data-estado="${e}" data-tipo="${tp}">${ic(i,22)}${l}</button>`).join('')}</div>
+P.nuevo=()=>({title:'Añadir',body:`<div class="grid4">${[['visita','Consulta que ya fue','med','hecha',''],['visita','Cita','cal','cita',''],['visita','Intervención','cut','cita','intervencion'],['visita','Urgencias','warn','hecha','urgencias'],['prueba','Prueba','flask','',''],['prueba','Analítica','drop','','analitica'],['tarea','Tarea','task','',''],['med','Medica­mento','pill','',''],['episodio','Episodio','doc','','']].map(([f,l,i,e,tp])=>`<button class="gbtn" data-a="form" data-f="${f}" data-estado="${e}" data-tipo="${tp}">${ic(i,22)}${l}</button>`).join('')}</div>
 <div class="two"><button class="b2" data-a="form" data-f="medico">+ Médico</button><button class="b2" data-a="form" data-f="persona">+ Familiar</button></div>`});
 P.dispositivos=()=>({title:'Conectar otro móvil',body:`<div class="qrbox"><div id="qrbox" class="qrimg" aria-label="Código QR con el enlace"><p class="small">Creando el QR…</p></div><code class="code">${esc(shareLink())}</code><button class="b2" data-a="copy">Copiar enlace</button></div>
 <section class="sec"><h3>En el otro móvil</h3><ol class="plain"><li>Escanea el QR o abre el enlace.</li><li>Entra con la cuenta de Google que vaya a usar la app.</li><li>Si es una cuenta distinta de la que creó la hoja, elige la hoja «Medikuak» en su Drive cuando la app lo pida. Es una sola vez: así Google da permiso a la app solo para ese archivo.</li><li>Pon nombre al móvil.</li></ol></section>
@@ -765,13 +768,14 @@ function medField(d,n,l,opcional){
 }
 const errP=s=>s.err?`<p class="ferr">${esc(s.err)}</p>`:'';
 const saveBtn=(l='Guardar')=>`<div class="foot"><button class="b1" data-a="save">${l}</button></div>`;
-P['form-visita']=s=>{const d=s.d,hecha=d.estado==='hecha',int=d.tipo==='intervencion';
-  return{title:s.id?(int?'Editar intervención':'Editar consulta'):int?(hecha?'Intervención ya hecha':'Nueva intervención'):hecha?'Nueva consulta':'Nueva cita',body:`${seg(d,'tipo','Tipo de cita',[['','Consulta'],['intervencion','Intervención']])}${s.id?'':seg(d,'estado','¿Cuándo?',[['hecha','Ya fue'],['cita','Es una cita futura']])}${epField(s)}${medField(d,'med',int?'Quién opera o atiende':'Médico')}
+P['form-visita']=s=>{const d=s.d,urg=d.tipo==='urgencias';if(urg)d.estado='hecha';const hecha=d.estado==='hecha',int=d.tipo==='intervencion';
+  return{title:urg?(s.id?'Editar urgencias':'Urgencias'):s.id?(int?'Editar intervención':'Editar consulta'):int?(hecha?'Intervención ya hecha':'Nueva intervención'):hecha?'Nueva consulta':'Nueva cita',body:`${seg(d,'tipo','Tipo',[['','Consulta'],['intervencion','Intervención'],['urgencias','Urgencias']])}${s.id||urg?'':seg(d,'estado','¿Cuándo?',[['hecha','Ya fue'],['cita','Es una cita futura']])}${epField(s)}
+${urg?`${sel(d,'red','Red de salud',redOpts())}${inp(d,'lugar','Hospital','text','Hospital universitario')}${medField(d,'med','Médico que atendió (opcional)',true)}`:medField(d,'med',int?'Quién opera o atiende':'Médico')}
 <div class="two">${inp(d,'fecha','Fecha','date')}${inp(d,'hora',hecha?'Hora (opcional)':'Hora','time')}</div>
 ${int&&!hecha?ta(d,'prep','Preparación','Ayunas desde las 00:00, ingreso a las 7:30, traer la analítica'):''}
-${hecha?(int?ta(d,'dijo','¿Cómo fue?','Qué se hizo, informe de alta, cuidados'):ta(d,'dijo','¿Qué dijeron?','Diagnóstico, tratamiento, qué vigilar')):''}
+${hecha?(urg?ta(d,'dijo','¿Qué pasó y qué dijeron?','Motivo, diagnóstico, tratamiento, cuándo volver'):int?ta(d,'dijo','¿Cómo fue?','Qué se hizo, informe de alta, cuidados'):ta(d,'dijo','¿Qué dijeron?','Diagnóstico, tratamiento, qué vigilar')):''}
 ${hecha&&!s.id?`${ta(d,'pruebas','Pruebas que pide (una por línea)','Resonancia de rodilla')}<div class="two">${inp(d,'farmaco','Medicamento','text','Ibuprofeno 600 mg')}${inp(d,'pauta','Cómo tomarlo','text','1 cada 8 h')}</div>`:''}
-${!s.id?ta(d,'tareas','Qué hay que hacer (una por línea)','Pedir cita en 3 meses'):''}${errP(s)}${saveBtn(int?'Guardar intervención':hecha?'Guardar consulta':'Guardar cita')}`}};
+${!s.id?ta(d,'tareas','Qué hay que hacer (una por línea)','Pedir cita en 3 meses'):''}${errP(s)}${saveBtn(urg?'Guardar urgencias':int?'Guardar intervención':hecha?'Guardar consulta':'Guardar cita')}`}};
 P['form-prueba']=s=>{const d=s.d,an=d.tipo==='analitica';return{title:an?'Nueva analítica':'Nueva prueba',body:`${seg(d,'tipo','Tipo',[['','Prueba'],['analitica','Analítica']])}${epField(s)}${an?inp(d,'nombre','Qué analítica (opcional)','text','Sangre y orina'):inp(d,'nombre','Prueba','text','Resonancia de rodilla')}${seg(d,'estado','Estado',[['pedida','Pedida, sin cita'],['citada','Ya tiene cita']])}
 ${d.estado==='citada'?`<div class="two">${inp(d,'fecha','Fecha','date')}${inp(d,'hora','Hora','time')}</div>${sel(d,'red','Dónde: red de salud',redOpts())}${inp(d,'lugar','Centro','text','Hospital universitario')}${ta(d,'prep','Preparación','Ayunas…')}`:''}${errP(s)}${saveBtn()}`}};
 P['form-tarea']=s=>{const d=s.d;return{title:'Nueva tarea',body:`${epField(s)}${seg(d,'tipo','Tipo',[['','Otra cosa'],['cita','Pedir una cita']])}${inp(d,'texto','Qué hay que hacer','text',d.tipo==='cita'?'Pedir revisión de dermatología':'Recoger el informe')}${d.tipo==='cita'?medField(d,'med','Con quién',true)+'<p class="hint">Al marcarla, la app te pregunta si ya tienes cita y la apunta.</p>':''}${errP(s)}${saveBtn()}`}};
@@ -794,7 +798,7 @@ P['form-persona']=s=>({title:s.id?'Cambiar nombre':'Nuevo familiar',body:`${inp(
 
 function initDraft(s){
   const d={};const f=s.t.slice(5);
-  if(f==='visita'){if(s.id){const v=get('visitas',s.id);Object.assign(d,{tipo:v.tipo||'',estado:v.estado,ep:v.ep,persona:epi(v.ep)?.persona,med:v.med,fecha:v.fecha,hora:v.hora,prep:v.prep||'',dijo:v.dijo})}
+  if(f==='visita'){if(s.id){const v=get('visitas',s.id);Object.assign(d,{tipo:v.tipo||'',red:v.red||'',lugar:v.lugar||'',estado:v.estado,ep:v.ep,persona:epi(v.ep)?.persona,med:v.med,fecha:v.fecha,hora:v.hora,prep:v.prep||'',dijo:v.dijo})}
     else{d.tipo=s.tipo||'';d.estado=s.estado||'hecha';d.fecha=d.estado==='hecha'?HOY:'';d.hora='';const last=s.ep&&live('visitas').filter(v=>v.ep===s.ep).sort((a,b)=>b.fecha.localeCompare(a.fecha))[0];if(last)d.med=last.med}}
   if(f==='prueba'){d.estado='pedida';d.tipo=s.tipo||'';const v=s.ep&&live('visitas').filter(x=>x.ep===s.ep).sort((a,b)=>b.fecha.localeCompare(a.fecha))[0];d.red=(v&&medi(v.med)?.red)||''}
   if(f==='red'){if(s.id){const r=get('redes',s.id);Object.assign(d,{nombre:r.nombre,h:r.h,logo:r.logo})}else d.h='r4'}
@@ -819,15 +823,17 @@ function saveForm(s){
   if(f==='form-visita'){
     if(!epOk())return fail('Escribe el nombre del episodio nuevo');
     if(d.med==='__new'&&!T(d.mNombre))return fail('Escribe el nombre del médico');
+    if(d.tipo!=='urgencias'&&!d.med)return fail('Elige el médico');
+    if(d.tipo==='urgencias'&&d.fecha>HOY)return fail('Las urgencias se apuntan cuando ya han pasado');
     if(!d.fecha)return fail('Pon la fecha');if(d.estado==='cita'&&!d.hora)return fail('Pon la hora de la cita');
     if(d.estado==='cita'&&d.fecha<HOY)return fail('Una cita futura no puede tener fecha pasada');
     close();return write(()=>{const ep=mkEp(s),m=mkMed(d,'med');
-      if(s.id){const v=get('visitas',s.id);Object.assign(v,{ep,tipo:d.tipo||'',med:m,fecha:d.fecha,hora:d.hora||'',estado:d.estado,prep:d.tipo==='intervencion'?T(d.prep):'',dijo:T(d.dijo)});stamp(v)}
-      else{const v=stamp({id:uid(),ep,tipo:d.tipo||'',med:m,fecha:d.fecha,hora:d.hora||'',estado:d.estado,prep:d.tipo==='intervencion'&&d.estado==='cita'?T(d.prep):'',dijo:d.estado==='hecha'?T(d.dijo):''});D.visitas.push(v);
+      if(s.id){const v=get('visitas',s.id);Object.assign(v,{ep,tipo:d.tipo||'',med:m,red:d.tipo==='urgencias'?d.red||'':'',lugar:d.tipo==='urgencias'?T(d.lugar):'',fecha:d.fecha,hora:d.hora||'',estado:d.estado,prep:d.tipo==='intervencion'?T(d.prep):'',dijo:T(d.dijo)});stamp(v)}
+      else{const v=stamp({id:uid(),ep,tipo:d.tipo||'',med:m,red:d.tipo==='urgencias'?d.red||'':'',lugar:d.tipo==='urgencias'?T(d.lugar):'',fecha:d.fecha,hora:d.hora||'',estado:d.estado,prep:d.tipo==='intervencion'&&d.estado==='cita'?T(d.prep):'',dijo:d.estado==='hecha'?T(d.dijo):''});D.visitas.push(v);
         if(d.estado==='hecha'){lines(d.pruebas).forEach(t=>D.pruebas.push(stamp({id:uid(),ep,vis:v.id,nombre:t,estado:'pedida',fecha:'',hora:'',lugar:'',prep:'',res:''})));
           if(T(d.farmaco))D.med.push(stamp({id:uid(),ep,vis:v.id,medico:m,farmaco:T(d.farmaco),pauta:T(d.pauta),ini:d.fecha,fin:''}))}
         lines(d.tareas).forEach(t=>D.tareas.push(stamp({id:uid(),ep,vis:v.id,texto:t,tipo:esCita(t)?'cita':'',med:esCita(t)?m:'',esperando:'',hecha:false})));
-        if(s.fromTask){const t=get('tareas',s.fromTask);if(t){t.hecha=true;t.cita=v.id;stamp(t)}}}},s.id?'Guardado':s.fromTask?'Cita apuntada y tarea cerrada':d.tipo==='intervencion'?'Intervención apuntada':d.estado==='cita'?'Cita apuntada':'Consulta guardada')}
+        if(s.fromTask){const t=get('tareas',s.fromTask);if(t){t.hecha=true;t.cita=v.id;stamp(t)}}}},s.id?'Guardado':s.fromTask?'Cita apuntada y tarea cerrada':d.tipo==='urgencias'?'Urgencias guardadas':d.tipo==='intervencion'?'Intervención apuntada':d.estado==='cita'?'Cita apuntada':'Consulta guardada')}
   if(f==='form-prueba'){if(!epOk())return fail('Escribe el nombre del episodio nuevo');if(!T(d.nombre)&&d.tipo!=='analitica')return fail('Escribe qué prueba es');if(d.estado==='citada'&&!d.fecha)return fail('Pon la fecha de la cita');
     close();return write(()=>{D.pruebas.push(stamp({id:uid(),ep:mkEp(s),vis:'',tipo:d.tipo||'',nombre:T(d.nombre)||'Analítica',estado:d.estado,fecha:d.estado==='citada'?d.fecha:'',hora:d.estado==='citada'?d.hora||'':'',red:d.red||'',lugar:T(d.lugar),prep:T(d.prep),res:''}))},d.tipo==='analitica'?'Analítica apuntada':'Prueba apuntada')}
   if(f==='form-tarea'){if(!epOk())return fail('Escribe el nombre del episodio nuevo');if(!T(d.texto))return fail('Escribe la tarea');
