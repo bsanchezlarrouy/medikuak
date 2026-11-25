@@ -55,7 +55,7 @@ h2,h3{margin:0}h3{font-size:18px}
 .tag{flex:none;font-size:12px;font-weight:700;padding:3px 8px;border-radius:6px;background:var(--chip);color:var(--mute)}
 .top .sync+.sync{margin-left:6px}
 .lockb{display:inline-flex;vertical-align:-2px;color:var(--mute);margin-left:4px}
-.tag.tv{background:var(--accbg);color:var(--acc)}.tag.tu{background:light-dark(#F7E2E2,#3F2222);color:light-dark(#8A2F2F,#F2B0B0)}.tag.ti{background:light-dark(#EEE7F6,#2E2944);color:light-dark(#5A3F8A,#C8BEF0)}.tag.ta{background:light-dark(#E2EFE6,#1D3326);color:light-dark(#2F5D3A,#A6D8B0)}
+.tag.tv{background:var(--accbg);color:var(--acc)}.tag.tvac{background:light-dark(#DFF1EE,#13332F);color:light-dark(#1F6B62,#9ED9CF)}.tag.tu{background:light-dark(#F7E2E2,#3F2222);color:light-dark(#8A2F2F,#F2B0B0)}.tag.ti{background:light-dark(#EEE7F6,#2E2944);color:light-dark(#5A3F8A,#C8BEF0)}.tag.ta{background:light-dark(#E2EFE6,#1D3326);color:light-dark(#2F5D3A,#A6D8B0)}
 .rl{display:flex;margin-top:4px}
 .who2{display:flex;align-items:center;gap:6px}.who2 .av{flex:none}
 .row.cita{align-items:flex-start}.row.cita .when{padding-top:2px}.row.cita .tag{margin-top:2px}
@@ -129,7 +129,7 @@ h2,h3{margin:0}h3{font-size:18px}
 .f textarea{resize:vertical;line-height:1.4}
 .pills{display:flex;gap:8px;flex-wrap:wrap}
 .seg{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);padding:4px;border-radius:14px;background:var(--chip)}
-.seg button{min-height:44px;border:0;border-radius:11px;background:none;font-size:15px;color:var(--mute)}
+.seg button{min-height:44px;padding:0 2px;border:0;border-radius:11px;background:none;font-size:14px;color:var(--mute);line-height:1.15}
 .seg button[aria-checked=true]{background:var(--card);color:var(--ink);font-weight:700;box-shadow:0 1px 2px rgba(0,0,0,.15)}
 .two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .fixed{margin:0;padding:12px 14px;border-radius:12px;background:var(--chip);font-weight:700}
@@ -276,6 +276,7 @@ qr:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" 
 sheet:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 9h16M4 15h16M10 3v18"/>',
 drop:'<path d="M12 3.5s-6 6.6-6 11a6 6 0 0 0 12 0c0-4.4-6-11-6-11z"/><path d="M9.5 15a2.5 2.5 0 0 0 2.5 2.5"/>',
 cut:'<rect x="2.5" y="8.5" width="19" height="7" rx="3.5" transform="rotate(-45 12 12)"/><path d="M10.5 10.5h.01M13.5 13.5h.01M10.5 13.5h.01M13.5 10.5h.01"/>',
+syringe:'<path d="m18 2 4 4M17 7l3-3M19 9 8.7 19.3a1 1 0 0 1-1.4 0l-2.6-2.6a1 1 0 0 1 0-1.4L15 5M9 11l4 4M5 19l-3 3M14 4l6 6"/>',
 join:'<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>'};
 const ic=(n,s=22)=>`<svg aria-hidden="true" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${n==='more'?3:1.9}" stroke-linecap="round" stroke-linejoin="round">${I[n]}</svg>`;
 
@@ -296,7 +297,7 @@ const TABLAS={
   redes:['Redes',[['nombre','Nombre'],['h','Color'],['logo','Logo (no tocar)']]],
   medicos:['Medicos',[['nombre','Nombre'],['esp','Especialidad'],['red','Red (id)'],['centro','Centro'],['tel','Teléfono'],['notas','Notas']]],
   episodios:['Episodios',[['persona','Persona (id)'],['titulo','Título'],['estado','Estado'],['ini','Inicio','d'],['fin','Fin','d'],['prev','Revisión prevista','d'],['notas','Notas'],['privado','Privado','b']]],
-  visitas:['Visitas',[['ep','Episodio (id)'],['tipo','Tipo'],['med','Médico (id)'],['fecha','Fecha','d'],['hora','Hora'],['estado','Estado'],['red','Red (id)'],['lugar','Lugar'],['prep','Preparación'],['dijo','Qué dijeron']]],
+  visitas:['Visitas',[['ep','Episodio (id)'],['tipo','Tipo'],['med','Médico (id)'],['fecha','Fecha','d'],['hora','Hora'],['estado','Estado'],['red','Red (id)'],['lugar','Lugar'],['vacuna','Vacuna'],['dosis','Dosis'],['prep','Preparación'],['dijo','Qué dijeron']]],
   pruebas:['Pruebas',[['ep','Episodio (id)'],['vis','Visita (id)'],['tipo','Tipo'],['nombre','Prueba'],['estado','Estado'],['esperando','Pedida el','d'],['red','Red (id)'],['fecha','Fecha','d'],['hora','Hora'],['lugar','Lugar'],['prep','Preparación'],['res','Resultado']]],
   med:['Medicacion',[['ep','Episodio (id)'],['vis','Visita (id)'],['medico','Médico (id)'],['farmaco','Fármaco'],['pauta','Pauta'],['ini','Inicio','d'],['fin','Fin','d']]],
   tareas:['Tareas',[['ep','Episodio (id)'],['vis','Visita (id)'],['texto','Tarea'],['tipo','Tipo'],['med','Médico (id)'],['esperando','Pedida el','d'],['hecha','Hecha','b'],['cita','Cita (id)']]],
@@ -368,12 +369,12 @@ function toLogo(file){return new Promise((ok,ko)=>{const fr=new FileReader();fr.
   for(const N of [96,72,56,40]){const c=document.createElement('canvas');c.width=c.height=N;const x=c.getContext('2d');const k=Math.min(N/im.width,N/im.height),w=im.width*k,h=im.height*k;x.drawImage(im,(N-w)/2,(N-h)/2,w,h);const u=c.toDataURL('image/png');if(u.length<45000)return ok(u)}
   ko(new Error('grande'))};im.src=fr.result};fr.readAsDataURL(file)})}
 const esCita=t=>/^pedir (una )?(cita|revisi)/i.test(t);
-const TIPO_V={'':'Consulta',intervencion:'Intervención',urgencias:'Urgencias'},TIPO_P={'':'Prueba',analitica:'Analítica'};
+const TIPO_V={'':'Consulta',intervencion:'Intervención',urgencias:'Urgencias',vacuna:'Vacuna'},TIPO_P={'':'Prueba',analitica:'Analítica'};
 const tipoV=v=>TIPO_V[v.tipo||'']||'Consulta',tipoP=x=>TIPO_P[x.tipo||'']||'Prueba';
-const TAGC={'Consulta':'tv','Intervención':'ti','Urgencias':'tu','Prueba':'','Analítica':'ta'};
+const TAGC={'Consulta':'tv','Intervención':'ti','Urgencias':'tu','Vacuna':'tvac','Prueba':'','Analítica':'ta'};
 const tagT=t=>`<span class="tag ${TAGC[t]||''}">${t}</span>`;
 /* título y red de una visita: las urgencias pueden no tener médico, y entonces cuenta el hospital */
-const vTitulo=v=>{const m=medi(v.med);if(v.tipo==='urgencias')return 'Urgencias'+(v.lugar?' · '+v.lugar:m?' · '+m.nombre:'');return m?`${m.esp} · ${m.nombre}`:'Visita'};
+const vTitulo=v=>{const m=medi(v.med);if(v.tipo==='vacuna')return 'Vacuna'+(v.vacuna?' · '+v.vacuna:'')+(v.dosis?' ('+v.dosis+')':'');if(v.tipo==='urgencias')return 'Urgencias'+(v.lugar?' · '+v.lugar:m?' · '+m.nombre:'');return m?`${m.esp} · ${m.nombre}`:'Visita'};
 const vRed=v=>v.red||(medi(v.med)||{}).red||'';
 const telLink=m=>m&&m.tel?`<a class="b2 tel" href="tel:${esc(m.tel.replace(/\s/g,''))}">${ic('phone',18)}<span>Llamar<small>${esc(m.tel)}</small></span></a>`:'';
 
@@ -661,7 +662,7 @@ function vCal(){
     cells.push(`<button class="cday${f<HOY?' past':''}${f===HOY?' today':''}${sel?' sel':''}${l.length?' has':''}${day===1?' m1':''}" data-a="calday" data-v="${f}" aria-pressed="${sel}" aria-label="${esc(fdate(f))}${l.length?`, ${l.length} cita${l.length>1?'s':''}`:''}">
 <span class="cn">${day===1||i===0?`${day} <small>${MES[d.getMonth()]}</small>`:day}</span>
 <span class="cd">${l.slice(0,3).map(c=>`<i class="h${c.p.h||0}"></i>`).join('')}${l.length>3?`<em>+${l.length-3}</em>`:''}</span>
-<span class="ce">${l.slice(0,3).map(c=>`<span class="h${c.p.h||0}"><b>${esc(c.hora||'')}</b> ${esc(c.p.nombre)} · ${esc(c.titulo.split(' · ')[0])}</span>`).join('')}${l.length>3?`<em>+${l.length-3} más</em>`:''}</span></button>`);
+<span class="ce">${l.slice(0,3).map(c=>`<span class="h${c.p.h||0}"><b>${esc(c.hora||'')}</b> ${esc(c.p.nombre)} · ${esc(c.tipo==='Vacuna'?c.titulo.replace(/^Vacuna · /,''):c.titulo.split(' · ')[0])}</span>`).join('')}${l.length>3?`<em>+${l.length-3} más</em>`:''}</span></button>`);
   }
   const people=[...new Map(cs.map(c=>[c.p.id,c.p])).values()];
   const sl=by[S.calSel]||[],nCitas=cs.filter(c=>c.fecha<=fin).length;
@@ -752,7 +753,7 @@ ${hayPin()?`<div class="list"><button class="sw" role="switch" aria-checked="${C
 const VIEWS={inicio:()=>`<div class="home">${vInicio()}</div>`,agenda:vAgenda,familia:vFamilia,medicos:vMedicos,mas:vMas};
 
 /* ---------- fichas (hojas que suben) ---------- */
-const ADD=[['visita','Consulta','med','hecha',''],['visita','Cita','cal','cita',''],['visita','Intervención','cut','cita','intervencion'],['visita','Urgencias','warn','hecha','urgencias'],['prueba','Prueba','flask','',''],['prueba','Analítica','drop','','analitica'],['med','Fármaco','pill','',''],['tarea','Tarea','task','',''],['doc','Informe','doc','','']];
+const ADD=[['visita','Consulta','med','hecha',''],['visita','Cita','cal','cita',''],['visita','Intervención','cut','cita','intervencion'],['visita','Urgencias','warn','hecha','urgencias'],['visita','Vacuna','syringe','cita','vacuna'],['prueba','Prueba','flask','',''],['prueba','Analítica','drop','','analitica'],['med','Fármaco','pill','',''],['tarea','Tarea','task','',''],['doc','Informe','doc','','']];
 const metaLine=x=>`<p class="meta">Apuntado desde ${esc(x.por)} · ${esc(hace(x.act))}</p>`;
 const medRow=r=>{const m=medi(r.medico);return `<button class="li" data-a="form" data-f="med" data-id="${r.id}">${ic('pill',20)}<div><p class="t">${esc(r.farmaco)}</p><p class="s">${esc(r.pauta)}${m?' · '+esc(m.nombre):''}</p><p class="s">${esc(epi(r.ep)?.titulo||'')}${r.fin?` · hasta ${esc(fshort(r.fin))}`:' · sin fecha de fin'}</p></div></button>`};
 function epCard(e){
@@ -840,7 +841,7 @@ P.pedircita=s=>{const t=get('tareas',s.id);if(!t)return null;const m=medi(t.med)
 ${t.esperando?'':`<button class="choice" data-a="tespera" data-id="${t.id}">${ic('phone',28)}<span><span class="t">La he pedido, me llamarán</span><br><span class="s">Sale de «Por hacer» y pasa a «Esperando que te llamen». No cuenta como atrasado.</span></span></button>`}
 <button class="choice" data-a="thecha" data-id="${t.id}">${ic('check',28)}<span><span class="t">Ya no hace falta</span><br><span class="s">Se marca como hecha sin apuntar ninguna cita.</span></span></button>
 ${m?`<div class="foot">${telLink(m)}<p class="meta">${esc(m.nombre)} · ${esc(m.esp)}${m.centro?' · '+esc(m.centro):''}</p></div>`:''}`}};
-P.nuevo=()=>({title:'Añadir',body:`<div class="grid4">${[['visita','Consulta que ya fue','med','hecha',''],['visita','Cita','cal','cita',''],['visita','Intervención','cut','cita','intervencion'],['visita','Urgencias','warn','hecha','urgencias'],['prueba','Prueba','flask','',''],['prueba','Analítica','drop','','analitica'],['tarea','Tarea','task','',''],['med','Medica­mento','pill','',''],['episodio','Episodio','doc','','']].map(([f,l,i,e,tp])=>`<button class="gbtn" data-a="form" data-f="${f}" data-estado="${e}" data-tipo="${tp}">${ic(i,22)}${l}</button>`).join('')}</div>
+P.nuevo=()=>({title:'Añadir',body:`<div class="grid4">${[['visita','Consulta que ya fue','med','hecha',''],['visita','Cita','cal','cita',''],['visita','Intervención','cut','cita','intervencion'],['visita','Urgencias','warn','hecha','urgencias'],['visita','Vacuna','syringe','cita','vacuna'],['prueba','Prueba','flask','',''],['prueba','Analítica','drop','','analitica'],['tarea','Tarea','task','',''],['med','Medica­mento','pill','',''],['episodio','Episodio','doc','','']].map(([f,l,i,e,tp])=>`<button class="gbtn" data-a="form" data-f="${f}" data-estado="${e}" data-tipo="${tp}">${ic(i,22)}${l}</button>`).join('')}</div>
 <div class="two"><button class="b2" data-a="form" data-f="medico">+ Médico</button><button class="b2" data-a="form" data-f="persona">+ Familiar</button></div>`});
 P.dispositivos=()=>({title:'Conectar otro móvil',body:`<div class="qrbox"><div id="qrbox" class="qrimg" aria-label="Código QR con el enlace"><p class="small">Creando el QR…</p></div><code class="code">${esc(shareLink())}</code><button class="b2" data-a="copy">Copiar enlace</button></div>
 <section class="sec"><h3>En el otro móvil</h3><ol class="plain"><li>Escanea el QR o abre el enlace.</li><li>Entra con la cuenta de Google que vaya a usar la app.</li><li>Si es una cuenta distinta de la que creó la hoja, elige la hoja «Medikuak» en su Drive cuando la app lo pida. Es una sola vez: así Google da permiso a la app solo para ese archivo.</li><li>Pon nombre al móvil.</li></ol></section>
@@ -857,6 +858,7 @@ function epField(s){
   const ps=live('personas');if(!ps.length)return `<p class="hint">Primero añade a alguien de la familia.</p><button type="button" class="b2" data-a="form" data-f="persona">+ Añadir familiar</button>`;
   if(!d.persona)d.persona=S.pf||ps[0]?.id||'';
   const eps=live('episodios').filter(e=>e.persona===d.persona&&(e.estado==='abierto'||e.id===d.ep));
+  if(d.ep===undefined&&d.tipo==='vacuna'){const vv=eps.find(e=>/vacun/i.test(e.titulo));d.ep=vv?vv.id:'__new';if(!vv&&!d.epNuevo)d.epNuevo='Vacunas'}
   if(d.ep!=='__new'&&!eps.some(e=>e.id===d.ep))d.ep=eps[0]?.id||'__new';
   return `<div class="f"><span>¿Para quién?</span><div class="pills">${ps.map(p=>`<button type="button" class="pill" aria-pressed="${d.persona===p.id}" data-a="dset" data-n="persona" data-v="${p.id}">${esc(p.nombre)}</button>`).join('')}</div></div>
 ${sel(d,'ep','¿De qué episodio?',eps.map(e=>[e.id,e.titulo]).concat([['__new','+ Episodio nuevo…']]))}${d.ep==='__new'?inp(d,'epNuevo','Nombre del episodio nuevo','text','Dolor de rodilla'):''}`;
@@ -870,8 +872,14 @@ function medField(d,n,l,opcional){
 }
 const errP=s=>s.err?`<p class="ferr">${esc(s.err)}</p>`:'';
 const saveBtn=(l='Guardar')=>`<div class="foot"><button class="b1" data-a="save">${l}</button></div>`;
-P['form-visita']=s=>{const d=s.d,urg=d.tipo==='urgencias';if(urg)d.estado='hecha';const hecha=d.estado==='hecha',int=d.tipo==='intervencion';
-  return{title:urg?(s.id?'Editar urgencias':'Urgencias'):s.id?(int?'Editar intervención':'Editar consulta'):int?(hecha?'Intervención ya hecha':'Nueva intervención'):hecha?'Nueva consulta':'Nueva cita',body:`${seg(d,'tipo','Tipo',[['','Consulta'],['intervencion','Intervención'],['urgencias','Urgencias']])}${s.id||urg?'':seg(d,'estado','¿Cuándo?',[['hecha','Ya fue'],['cita','Es una cita futura']])}${epField(s)}
+P['form-visita']=s=>{const d=s.d,urg=d.tipo==='urgencias',vac=d.tipo==='vacuna';if(urg)d.estado='hecha';const hecha=d.estado==='hecha',int=d.tipo==='intervencion';
+  if(vac)return{title:s.id?'Editar vacuna':'Vacuna',body:`${seg(d,'tipo','Tipo',[['','Consulta'],['intervencion','Intervención'],['urgencias','Urgencias'],['vacuna','Vacuna']])}${s.id?'':seg(d,'estado','¿Cuándo?',[['hecha','Ya puesta'],['cita','Es una cita futura']])}${epField(s)}
+<div class="two">${inp(d,'vacuna','Vacuna','text','Gripe, tétanos…')}${inp(d,'dosis','Dosis','text','1ª, refuerzo…')}</div>
+${sel(d,'red','Red de salud',redOpts())}${inp(d,'lugar','Dónde','text','Centro de salud del barrio')}${medField(d,'med','Quién la pone (opcional)',true)}
+<div class="two">${inp(d,'fecha','Fecha','date')}${inp(d,'hora',hecha?'Hora (opcional)':'Hora','time')}</div>
+${hecha?ta(d,'dijo','Notas (opcional)','Lote, reacciones, recomendaciones'):''}
+${hecha&&!s.id?`${inp(d,'proxDosis','Siguiente dosis, más o menos (opcional)','date')}<p class="hint">Si la pones, se crea la tarea de pedir esa cita.</p>`:''}${errP(s)}${saveBtn(hecha?'Guardar vacuna':'Guardar cita de vacuna')}`};
+  return{title:urg?(s.id?'Editar urgencias':'Urgencias'):s.id?(int?'Editar intervención':'Editar consulta'):int?(hecha?'Intervención ya hecha':'Nueva intervención'):hecha?'Nueva consulta':'Nueva cita',body:`${seg(d,'tipo','Tipo',[['','Consulta'],['intervencion','Intervención'],['urgencias','Urgencias'],['vacuna','Vacuna']])}${s.id||urg?'':seg(d,'estado','¿Cuándo?',[['hecha','Ya fue'],['cita','Es una cita futura']])}${epField(s)}
 ${urg?`${sel(d,'red','Red de salud',redOpts())}${inp(d,'lugar','Hospital','text','Hospital universitario')}${medField(d,'med','Médico que atendió (opcional)',true)}`:medField(d,'med',int?'Quién opera o atiende':'Médico')}
 <div class="two">${inp(d,'fecha','Fecha','date')}${inp(d,'hora',hecha?'Hora (opcional)':'Hora','time')}</div>
 ${int&&!hecha?ta(d,'prep','Preparación','Ayunas desde las 00:00, ingreso a las 7:30, traer la analítica'):''}
@@ -900,7 +908,7 @@ P['form-persona']=s=>({title:s.id?'Cambiar nombre':'Nuevo familiar',body:`${inp(
 
 function initDraft(s){
   const d={};const f=s.t.slice(5);
-  if(f==='visita'){if(s.id){const v=get('visitas',s.id);Object.assign(d,{tipo:v.tipo||'',red:v.red||'',lugar:v.lugar||'',estado:v.estado,ep:v.ep,persona:epi(v.ep)?.persona,med:v.med,fecha:v.fecha,hora:v.hora,prep:v.prep||'',dijo:v.dijo})}
+  if(f==='visita'){if(s.id){const v=get('visitas',s.id);Object.assign(d,{tipo:v.tipo||'',red:v.red||'',lugar:v.lugar||'',vacuna:v.vacuna||'',dosis:v.dosis||'',estado:v.estado,ep:v.ep,persona:epi(v.ep)?.persona,med:v.med,fecha:v.fecha,hora:v.hora,prep:v.prep||'',dijo:v.dijo})}
     else{d.tipo=s.tipo||'';d.estado=s.estado||'hecha';d.fecha=d.estado==='hecha'?HOY:'';d.hora='';const last=s.ep&&live('visitas').filter(v=>v.ep===s.ep).sort((a,b)=>b.fecha.localeCompare(a.fecha))[0];if(last)d.med=last.med}}
   if(f==='prueba'){d.estado='pedida';d.tipo=s.tipo||'';const v=s.ep&&live('visitas').filter(x=>x.ep===s.ep).sort((a,b)=>b.fecha.localeCompare(a.fecha))[0];d.red=(v&&medi(v.med)?.red)||''}
   if(f==='red'){if(s.id){const r=get('redes',s.id);Object.assign(d,{nombre:r.nombre,h:r.h,logo:r.logo})}else d.h='r4'}
@@ -925,17 +933,19 @@ function saveForm(s){
   if(f==='form-visita'){
     if(!epOk())return fail('Escribe el nombre del episodio nuevo');
     if(d.med==='__new'&&!T(d.mNombre))return fail('Escribe el nombre del médico');
-    if(d.tipo!=='urgencias'&&!d.med)return fail('Elige el médico');
+    if(d.tipo==='vacuna'&&!T(d.vacuna))return fail('Escribe qué vacuna es');
+    if(d.tipo!=='urgencias'&&d.tipo!=='vacuna'&&!d.med)return fail('Elige el médico');
     if(d.tipo==='urgencias'&&d.fecha>HOY)return fail('Las urgencias se apuntan cuando ya han pasado');
     if(!d.fecha)return fail('Pon la fecha');if(d.estado==='cita'&&!d.hora)return fail('Pon la hora de la cita');
     if(d.estado==='cita'&&d.fecha<HOY)return fail('Una cita futura no puede tener fecha pasada');
     close();return write(()=>{const ep=mkEp(s),m=mkMed(d,'med');
-      if(s.id){const v=get('visitas',s.id);Object.assign(v,{ep,tipo:d.tipo||'',med:m,red:d.tipo==='urgencias'?d.red||'':'',lugar:d.tipo==='urgencias'?T(d.lugar):'',fecha:d.fecha,hora:d.hora||'',estado:d.estado,prep:d.tipo==='intervencion'?T(d.prep):'',dijo:T(d.dijo)});stamp(v)}
-      else{const v=stamp({id:uid(),ep,tipo:d.tipo||'',med:m,red:d.tipo==='urgencias'?d.red||'':'',lugar:d.tipo==='urgencias'?T(d.lugar):'',fecha:d.fecha,hora:d.hora||'',estado:d.estado,prep:d.tipo==='intervencion'&&d.estado==='cita'?T(d.prep):'',dijo:d.estado==='hecha'?T(d.dijo):''});D.visitas.push(v);
-        if(d.estado==='hecha'){lines(d.pruebas).forEach(t=>D.pruebas.push(stamp({id:uid(),ep,vis:v.id,nombre:t,estado:'pedida',fecha:'',hora:'',lugar:'',prep:'',res:''})));
+      if(s.id){const v=get('visitas',s.id);Object.assign(v,{ep,tipo:d.tipo||'',med:m,red:/urgencias|vacuna/.test(d.tipo)?d.red||'':'',lugar:/urgencias|vacuna/.test(d.tipo)?T(d.lugar):'',vacuna:d.tipo==='vacuna'?T(d.vacuna):'',dosis:d.tipo==='vacuna'?T(d.dosis):'',fecha:d.fecha,hora:d.hora||'',estado:d.estado,prep:d.tipo==='intervencion'?T(d.prep):'',dijo:T(d.dijo)});stamp(v)}
+      else{const v=stamp({id:uid(),ep,tipo:d.tipo||'',med:m,red:/urgencias|vacuna/.test(d.tipo)?d.red||'':'',lugar:/urgencias|vacuna/.test(d.tipo)?T(d.lugar):'',vacuna:d.tipo==='vacuna'?T(d.vacuna):'',dosis:d.tipo==='vacuna'?T(d.dosis):'',fecha:d.fecha,hora:d.hora||'',estado:d.estado,prep:d.tipo==='intervencion'&&d.estado==='cita'?T(d.prep):'',dijo:d.estado==='hecha'?T(d.dijo):''});D.visitas.push(v);
+        if(d.tipo==='vacuna'&&d.estado==='hecha'&&d.proxDosis)D.tareas.push(stamp({id:uid(),ep,vis:v.id,texto:`Pedir cita: vacuna ${T(d.vacuna).toLowerCase()}, siguiente dosis (hacia ${fshort(d.proxDosis)})`,tipo:'cita',med:'',esperando:'',hecha:false}));
+        if(d.estado==='hecha'&&d.tipo!=='vacuna'){lines(d.pruebas).forEach(t=>D.pruebas.push(stamp({id:uid(),ep,vis:v.id,nombre:t,estado:'pedida',fecha:'',hora:'',lugar:'',prep:'',res:''})));
           if(T(d.farmaco))D.med.push(stamp({id:uid(),ep,vis:v.id,medico:m,farmaco:T(d.farmaco),pauta:T(d.pauta),ini:d.fecha,fin:''}))}
         lines(d.tareas).forEach(t=>D.tareas.push(stamp({id:uid(),ep,vis:v.id,texto:t,tipo:esCita(t)?'cita':'',med:esCita(t)?m:'',esperando:'',hecha:false})));
-        if(s.fromTask){const t=get('tareas',s.fromTask);if(t){t.hecha=true;t.cita=v.id;stamp(t)}}}},s.id?'Guardado':s.fromTask?'Cita apuntada y tarea cerrada':d.tipo==='urgencias'?'Urgencias guardadas':d.tipo==='intervencion'?'Intervención apuntada':d.estado==='cita'?'Cita apuntada':'Consulta guardada')}
+        if(s.fromTask){const t=get('tareas',s.fromTask);if(t){t.hecha=true;t.cita=v.id;stamp(t)}}}},s.id?'Guardado':s.fromTask?'Cita apuntada y tarea cerrada':d.tipo==='vacuna'?(d.estado==='cita'?'Cita de vacuna apuntada':'Vacuna apuntada'):d.tipo==='urgencias'?'Urgencias guardadas':d.tipo==='intervencion'?'Intervención apuntada':d.estado==='cita'?'Cita apuntada':'Consulta guardada')}
   if(f==='form-prueba'){if(!epOk())return fail('Escribe el nombre del episodio nuevo');if(!T(d.nombre)&&d.tipo!=='analitica')return fail('Escribe qué prueba es');if(d.estado==='citada'&&!d.fecha)return fail('Pon la fecha de la cita');
     close();return write(()=>{D.pruebas.push(stamp({id:uid(),ep:mkEp(s),vis:'',tipo:d.tipo||'',nombre:T(d.nombre)||'Analítica',estado:d.estado,fecha:d.estado==='citada'?d.fecha:'',hora:d.estado==='citada'?d.hora||'':'',red:d.red||'',lugar:T(d.lugar),prep:T(d.prep),res:''}))},d.tipo==='analitica'?'Analítica apuntada':'Prueba apuntada')}
   if(f==='form-tarea'){if(!epOk())return fail('Escribe el nombre del episodio nuevo');if(!T(d.texto))return fail('Escribe la tarea');
@@ -1008,7 +1018,7 @@ document.addEventListener('click',ev=>{
   else if(a==='nuevo'){if(C.lector)return toast('Solo lectura: tu cuenta es Lector en esta hoja.');push({t:'nuevo'})}
   else if(a==='form'){if(C.lector)return toast('Solo lectura: tu cuenta es Lector en esta hoja.');
     if(top&&top.t==='nuevo')S.sheets.pop();push({t:'form-'+el.dataset.f,id,ep:el.dataset.ep||'',estado:el.dataset.estado||'',tipo:el.dataset.tipo||'',persona:el.dataset.persona||''})}
-  else if(a==='dset'){top.d[el.dataset.n]=el.dataset.v;if(el.dataset.n==='persona')delete top.d.ep;top.err='';renderSheets()}
+  else if(a==='dset'){top.d[el.dataset.n]=el.dataset.v;if(el.dataset.n==='estado'&&el.dataset.v==='hecha'&&!top.d.fecha)top.d.fecha=HOY;if(el.dataset.n==='persona'||(el.dataset.n==='tipo'&&top.t==='form-visita'&&!top.ep&&!top.id))delete top.d.ep;top.err='';renderSheets()}
   else if(a==='save')saveForm(top);
   else if(a==='undo'){const u=S.toast&&S.toast.undo;S.toast=null;if(u)u();else renderToast()}
   else if(a==='tarea'){ev.preventDefault();const t=get('tareas',id);if(t.tipo==='cita'){if(C.lector)return toast('Solo lectura: tu cuenta es Lector en esta hoja.');push({t:'pedircita',id});return}write(()=>{t.hecha=true;stamp(t)},`Hecho: ${t.texto}`)}
