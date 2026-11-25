@@ -57,6 +57,17 @@ h2,h3{margin:0}h3{font-size:18px}
 .lockb{display:inline-flex;vertical-align:-2px;color:var(--mute);margin-left:4px}
 .tag.tv{background:var(--accbg);color:var(--acc)}.tag.tu{background:light-dark(#F7E2E2,#3F2222);color:light-dark(#8A2F2F,#F2B0B0)}.tag.ti{background:light-dark(#EEE7F6,#2E2944);color:light-dark(#5A3F8A,#C8BEF0)}.tag.ta{background:light-dark(#E2EFE6,#1D3326);color:light-dark(#2F5D3A,#A6D8B0)}
 .rl{display:flex;margin-top:4px}
+.who2{display:flex;align-items:center;gap:6px}.who2 .av{flex:none}
+.row.cita{align-items:flex-start}.row.cita .when{padding-top:2px}.row.cita .tag{margin-top:2px}
+.prepc{display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:700;padding:2px 8px;border-radius:8px;background:var(--warnbg);color:var(--warn)}
+.hero{background:var(--card);border:1.5px solid var(--acc);border-radius:18px;padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+.hh{display:flex;justify-content:space-between;align-items:center}.hwhen{font-size:14px;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:.02em}
+.hmain{display:flex;gap:14px;align-items:center;border:0;background:none;padding:0;text-align:left;width:100%}
+.hdate{flex:none;min-width:76px;display:flex;flex-direction:column;align-items:center;padding:8px 6px;border-radius:12px;background:var(--accbg);color:var(--acc)}
+.hdate b{font-size:24px;line-height:1.1}.hdate span{font-size:13px;font-weight:700}
+.hplace{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:15px}
+.hprep{display:flex;gap:8px;align-items:flex-start;padding:10px 12px;border-radius:12px;background:var(--warnbg);color:var(--warn);font-size:15px}.hprep span{color:var(--ink)}.hprep b{color:var(--warn)}
+.hact{display:flex;gap:8px;flex-wrap:wrap}.hact>*{flex:1 1 96px;min-height:44px;font-size:14px}
 .red{display:inline-flex;align-items:center;gap:6px;padding:2px 9px 2px 2px;border-radius:8px;background:var(--rb);color:var(--ri);font-size:13px;font-weight:700;line-height:1.2;white-space:nowrap}
 .red b,.red img{width:22px;height:22px;border-radius:6px;flex:none}
 .red b{display:inline-flex;align-items:center;justify-content:center;background:var(--ri);color:var(--card);font-size:12px}
@@ -318,8 +329,8 @@ const vRed=v=>v.red||(medi(v.med)||{}).red||'';
 const telLink=m=>m&&m.tel?`<a class="b2 tel" href="tel:${esc(m.tel.replace(/\s/g,''))}">${ic('phone',18)}<span>Llamar<small>${esc(m.tel)}</small></span></a>`:'';
 
 function citas(){
-  const a=live('visitas').filter(v=>v.estado==='cita').map(v=>{const m=medi(v.med);return{k:'visitas',id:v.id,fecha:v.fecha,hora:v.hora,tipo:tipoV(v),titulo:m?`${m.esp} · ${m.nombre}`:'Visita',p:epPer(v.ep),lugar:m?.centro||'',red:m?.red||'',ep:v.ep,epT:epi(v.ep)?.titulo||''}});
-  const b=live('pruebas').filter(x=>x.estado==='citada'&&x.fecha).map(x=>({k:'pruebas',id:x.id,fecha:x.fecha,hora:x.hora,tipo:tipoP(x),titulo:x.nombre,p:epPer(x.ep),lugar:x.lugar||'',red:x.red||'',ep:x.ep,epT:epi(x.ep)?.titulo||''}));
+  const a=live('visitas').filter(v=>v.estado==='cita').map(v=>{const m=medi(v.med);return{k:'visitas',id:v.id,fecha:v.fecha,hora:v.hora,tipo:tipoV(v),titulo:vTitulo(v),p:epPer(v.ep),lugar:v.lugar||m?.centro||'',red:vRed(v),ep:v.ep,epT:epi(v.ep)?.titulo||'',prep:v.prep||'',med:m}});
+  const b=live('pruebas').filter(x=>x.estado==='citada'&&x.fecha).map(x=>({k:'pruebas',id:x.id,fecha:x.fecha,hora:x.hora,tipo:tipoP(x),titulo:x.nombre,p:epPer(x.ep),lugar:x.lugar||'',red:x.red||'',ep:x.ep,epT:epi(x.ep)?.titulo||'',prep:x.prep||'',med:null}));
   return a.concat(b).sort((x,y)=>(x.fecha+(x.hora||'')).localeCompare(y.fecha+(y.hora||'')));
 }
 function gcal(c){
@@ -570,8 +581,22 @@ function renderPf(){
   const show=S.tab==='inicio'||S.tab==='agenda';
   $('#pf').innerHTML=show?`<div class="pf">${[{id:'',nombre:'Todos'}].concat(live('personas')).map(p=>`<button class="pill" aria-pressed="${S.pf===p.id}" data-a="pf" data-v="${p.id}">${esc(p.nombre)}</button>`).join('')}</div>`:'';
 }
-const dateBlock=c=>{const d=dt(c.fecha);return `<span class="when"><small>${DIAS[d.getDay()]}</small><b>${d.getDate()}</b><small>${MES[d.getMonth()]}${c.fecha.slice(0,4)!==YEAR?' '+c.fecha.slice(2,4):''}</small></span>`};
-const rowCita=(c,timeOnly)=>`<button class="row" data-a="open" data-k="${c.k}" data-id="${c.id}">${timeOnly?`<span class="when h"><b>${esc(c.hora||'—')}</b></span>`:dateBlock(c)}<span class="txt"><span class="t">${esc(c.titulo)}</span><span class="s">${timeOnly?'':esc(c.hora||'')+' · '}${esc(c.p.nombre)} · ${esc(c.epT)}</span>${c.red?`<span class="rl">${badge(c.red)}</span>`:''}</span>${tagT(c.tipo)}</button>`;
+const dateBlock=c=>{const d=dt(c.fecha);return `<span class="when"><small>${DIAS[d.getDay()]}</small><b>${d.getDate()}</b><small>${MES[d.getMonth()]}${c.fecha.slice(0,4)!==YEAR?' ’'+c.fecha.slice(2,4):''}</small></span>`};
+const cuando=f=>{const n=Math.round((dt(f)-dt(HOY))/864e5);return n===0?'Hoy':n===1?'Mañana':n<7?`En ${n} días`:n<14?'La semana que viene':n<60?`En ${Math.round(n/7)} semanas`:`En ${Math.round(n/30)} meses`};
+const mapsUrl=l=>'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(l);
+const rowCita=(c,timeOnly)=>`<button class="row cita" data-a="open" data-k="${c.k}" data-id="${c.id}">${timeOnly?`<span class="when h"><b>${esc(c.hora||'—')}</b></span>`:dateBlock(c)}<span class="txt"><span class="t">${esc(c.titulo)}</span>
+<span class="s who2">${av(c.p,20)}<span>${esc(c.p.nombre)} · ${esc(c.epT)}</span></span>
+<span class="s">${timeOnly?'':`<b>${esc(c.hora||'')}</b>${c.lugar?' · ':''}`}${esc(c.lugar)}</span>
+${c.red||c.prep?`<span class="rl" style="gap:6px;flex-wrap:wrap">${c.red?badge(c.red):''}${c.prep?`<span class="prepc">${ic('warn',14)} Preparación</span>`:''}</span>`:''}</span>${tagT(c.tipo)}</button>`;
+/* la próxima cita, en grande, con lo necesario para ir */
+function heroCita(c){
+  const tel=c.med&&c.med.tel;
+  return `<article class="hero"><div class="hh"><span class="hwhen">${esc(cuando(c.fecha))}</span>${tagT(c.tipo)}</div>
+<button class="hmain" data-a="open" data-k="${c.k}" data-id="${c.id}"><span class="hdate"><b>${esc(c.hora||'—')}</b><span>${esc(fdate(c.fecha))}</span></span><span class="txt"><span class="t" style="font-size:19px">${esc(c.titulo)}</span><span class="s who2">${av(c.p,22)}<span>${esc(c.p.nombre)} · ${esc(c.epT)}</span></span></span></button>
+${c.lugar||c.red?`<div class="hplace">${c.red?badge(c.red,true):''}<span>${esc(c.lugar)}</span></div>`:''}
+${c.prep?`<div class="hprep">${ic('warn',18)}<span><b>Preparación:</b> ${esc(c.prep)}</span></div>`:''}
+<div class="hact"><a class="b2" href="${esc(gcal(c))}" target="_blank" rel="noopener">${ic('cal',18)} Calendario</a>${c.lugar?`<a class="b2" href="${esc(mapsUrl(c.lugar))}" target="_blank" rel="noopener">${ic('ext',18)} Cómo llegar</a>`:''}${tel?`<a class="b2" href="tel:${esc(tel.replace(/\s/g,''))}">${ic('phone',18)} Llamar</a>`:''}</div></article>`;
+}
 
 const tareaRow=(t,corto)=>{const e=epi(t.ep);const sub=corto?'':`${esc(epPer(t.ep).nombre)} · ${esc(e?.titulo||'')}`;const esp=t.tipo==='cita'&&t.esperando?`La pediste ${esc(rel(t.esperando))}: esperando que llamen`:'';
   return `<label class="chk"><input type="checkbox" data-a="tarea" data-id="${t.id}" aria-label="${esc(t.texto)}"><span style="flex:1"><span class="t">${esc(t.texto)}</span>${sub?`<span class="s">${sub}</span>`:''}${esp?`<span class="s">${esp}</span>`:''}${!corto&&t.por!==C.device?`<span class="s">Apuntada desde ${esc(t.por)}</span>`:''}</span>${t.tipo==='cita'?`<span class="tag tv">${t.esperando?'Esperando':'Cita'}</span>`:''}</label>`};
@@ -592,7 +617,8 @@ function vInicio(){
 ${atr.map(e=>{const p=per(e.persona);const v=live('visitas').filter(x=>x.ep===e.id).sort((a,b)=>b.fecha.localeCompare(a.fecha))[0];const m=v&&medi(v.med);
 return `<div class="alert"><div class="ah">${av(p,34)}<div><p class="t">Revisión: ${esc(e.titulo)}</p><p class="s">${esc(p.nombre)} · tocaba ${esc(rel(e.prev))} y aún no hay cita</p></div></div><div class="btns">${telLink(m)}<button class="b1 warnb" data-a="form" data-f="visita" data-ep="${e.id}" data-estado="cita">Apuntar cita</button></div></div>`}).join('')}
 ${sinCerrar.map(v=>{const m=medi(v.med),p=epPer(v.ep);return `<div class="alert"><div class="ah">${av(p,34)}<div><p class="t">¿Fue ${v.tipo==='intervencion'?'la intervención':'la cita'} de ${esc(m?m.esp.toLowerCase():'')}?</p><p class="s">${esc(p.nombre)} · estaba citada ${esc(rel(v.fecha))}, a las ${esc(v.hora)}</p></div></div><div class="btns"><button class="b2" data-a="form" data-f="visita" data-id="${v.id}">Cambiar fecha</button><button class="b1 warnb" data-a="vhecha" data-id="${v.id}">Sí, fue</button></div></div>`}).join('')}</section>`:''}
-<section class="sec"><h3>Próximas citas</h3><div class="list">${prox.slice(0,4).map(c=>rowCita(c)).join('')||'<p class="empty">No hay citas apuntadas.</p>'}</div>${prox.length>4?`<button class="b2" data-a="tab" data-v="agenda">Ver las ${prox.length} en la agenda</button>`:''}</section>
+<section class="sec"><h3>Próximas citas</h3>${prox.length?heroCita(prox[0]):'<div class="list"><p class="empty">No hay citas apuntadas.</p></div>'}
+${prox.length>1?`<div class="list">${prox.slice(1,4).map(c=>rowCita(c)).join('')}</div>`:''}${prox.length>4?`<button class="b2" data-a="tab" data-v="agenda">Ver las ${prox.length} citas en la agenda</button>`:''}</section>
 <section class="sec"><h3>Por hacer</h3><div class="list">
 ${tareas.map(t=>tareaRow(t)).join('')}
 ${pedir.map(x=>`<button class="row" data-a="open" data-k="pruebas" data-id="${x.id}"><span class="txt"><span class="t">Pedir cita: ${esc(x.nombre)}</span><span class="s">${esc(epPer(x.ep).nombre)} · ${esc(epi(x.ep)?.titulo||'')}</span></span>${tagT(tipoP(x))}</button>`).join('')}
@@ -602,9 +628,13 @@ ${esperas.length?`<section class="sec"><h3>${ic('phone',20)} Esperando que te ll
 function vAgenda(){
   const cs=citas().filter(c=>fp(c.p.id)&&c.fecha>=HOY);
   if(!cs.length)return '<p class="empty">No hay citas próximas.</p>';
-  const g={};cs.forEach(c=>(g[c.fecha]=g[c.fecha]||[]).push(c));
-  return Object.keys(g).map(f=>`<section class="sec"><h3>${f===HOY?'Hoy':f===iso(1)?'Mañana':esc(fdate(f).replace(/^./,x=>x.toUpperCase()))} <span class="s" style="font-weight:400">· ${esc(fdate(f))}</span></h3><div class="list">${g[f].map(c=>rowCita(c,true)).join('')}</div></section>`).join('')
-  +'<p class="hint">Cada cita tiene su botón «Añadir a Google Calendar». La app no pide permiso sobre tu calendario.</p>';
+  const dow=(dt(HOY).getDay()+6)%7,finSem=iso(6-dow),finSig=iso(13-dow);
+  const grupo=f=>f===HOY?'Hoy':f===iso(1)?'Mañana':f<=finSem?'Esta semana':f<=finSig?'La semana que viene':f.slice(0,7)===HOY.slice(0,7)?'Este mes':'MES'+f.slice(0,7);
+  const g=[];cs.forEach(c=>{const k=grupo(c.fecha);let b=g.find(x=>x.k===k);if(!b)g.push(b={k,cs:[]});b.cs.push(c)});
+  const titulo=k=>k.startsWith('MES')?(x=>x.charAt(0).toUpperCase()+x.slice(1))(fmonth(k.slice(3)+'-01')):k;
+  return `<p class="hint" style="margin-top:-6px">${cs.length} cita${cs.length!==1?'s':''} próxima${cs.length!==1?'s':''}${S.pf?' de '+esc(per(S.pf).nombre):''}</p>`
+   +g.map(b=>`<section class="sec"><h3>${esc(titulo(b.k))}</h3><div class="list">${b.cs.map(c=>rowCita(c,b.k==='Hoy'||b.k==='Mañana')).join('')}</div></section>`).join('')
+   +'<p class="hint">Cada cita tiene su botón «Añadir a Google Calendar». La app no pide permiso sobre tu calendario.</p>';
 }
 function vFamilia(){
   return `<section class="sec"><div class="list">${live('personas').map(p=>{const eps=live('episodios').filter(e=>e.persona===p.id&&e.estado==='abierto');const n=citas().filter(c=>c.p.id===p.id&&c.fecha>=HOY);
