@@ -146,6 +146,21 @@ h2,h3{margin:0}h3{font-size:18px}
 @keyframes up{from{transform:translate(-50%,40%);opacity:.4}to{transform:translate(-50%,0);opacity:1}}
 @media (prefers-reduced-motion:reduce){.sheet.in{animation:none}}
 .home{display:flex;flex-direction:column;gap:24px}
+.calh{display:flex;justify-content:space-between;align-items:baseline}
+.cal{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:8px 6px 10px}
+.cwd,.cgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}.cgrid{gap:2px}
+.cwd span{text-align:center;font-size:12px;font-weight:700;color:var(--mute);padding:2px 0 6px}
+.cday{min-height:50px;border:0;background:none;border-radius:10px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 1px;font-size:15px;color:var(--ink);position:relative}
+.cday.past{opacity:.38}.cday.has .cn{font-weight:700}
+.cn{min-width:26px;height:26px;padding:0 4px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;gap:2px;white-space:nowrap}
+.cn small{font-size:10px;font-weight:700;text-transform:uppercase;color:var(--acc)}
+.cday.today .cn{background:var(--acc);color:var(--btnink)}.cday.today .cn small{color:inherit}
+.cday.sel{background:var(--accbg);box-shadow:inset 0 0 0 2px var(--acc)}
+.cday.m1::before{content:"";position:absolute;left:-1px;top:6px;bottom:6px;width:2px;border-radius:2px;background:var(--line)}
+.cd{display:flex;gap:3px;align-items:center;min-height:8px}.cd i{width:8px;height:8px;border-radius:50%;background:var(--ai)}.cd em{font-size:10px;font-style:normal;color:var(--mute)}
+.ce{display:none}
+.clegend{display:flex;gap:14px;flex-wrap:wrap;padding:10px 6px 0;font-size:13px;color:var(--mute)}.clegend i{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--ai);margin-right:6px}
+.calsel h4{margin:4px 0 8px;font-size:16px}
 /* ---------- pantallas anchas: tablet en horizontal y ordenador ---------- */
 @media (min-width:760px){
   #app{max-width:none;padding:0 0 48px 104px}
@@ -158,8 +173,15 @@ h2,h3{margin:0}h3{font-size:18px}
   .tabs button[aria-current=page]{background:var(--accbg)}
   .fab{bottom:32px;right:32px;width:64px;height:64px}
   #toast{bottom:28px;left:calc(50% + 52px)}
-  .home{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);grid-template-rows:min-content min-content 1fr;gap:24px 32px;align-items:start}
-  .s-prox{grid-column:1;grid-row:1 / 4}.s-atr,.s-hacer,.s-esp{grid-column:2}
+  .home{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);grid-template-rows:min-content min-content min-content 1fr;gap:24px 32px;align-items:start}
+  .s-cal{grid-column:1 / -1;grid-row:1}.s-prox{grid-column:1;grid-row:2 / 5}.s-atr,.s-hacer,.s-esp{grid-column:2}
+  .cal{padding:10px}.cgrid{gap:4px}
+  .cday{min-height:80px;align-items:stretch;padding:5px 6px;border:1px solid var(--line);border-radius:10px;gap:4px}
+  .cday .cn{align-self:flex-start}.cday.m1::before{display:none}.cday.m1{border-left:2px solid var(--acc)}
+  .cd{display:none}.ce{display:flex;flex-direction:column;gap:3px;min-width:0}
+  .ce span{display:block;font-size:12px;line-height:1.3;padding:2px 6px;border-radius:6px;background:var(--a);color:var(--ai);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
+  .ce em{font-size:11px;font-style:normal;color:var(--mute);text-align:left}
+  .calsel{max-width:640px}
   .v-agenda,.v-familia{max-width:860px}
   .v-familia .list,.v-medicos .list{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));background:none;border:0;gap:10px;overflow:visible}
   .v-familia .list>.row,.v-medicos .list>.row{border:1px solid var(--line);border-radius:16px;background:var(--card)}
@@ -304,7 +326,7 @@ async function loadAll(){
   try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
 }
 
-const S={found:null,unlockUntil:0,tab:'inicio',pf:'',sheets:[],anim:-1,syncing:false,last:0,err:'',errSt:0,sheetState:'',busy:'',toast:null,q:'',closed:false,confirm:''};
+const S={calSel:'',found:null,unlockUntil:0,tab:'inicio',pf:'',sheets:[],anim:-1,syncing:false,last:0,err:'',errSt:0,sheetState:'',busy:'',toast:null,q:'',closed:false,confirm:''};
 
 /* ---------- privado: oculto en este dispositivo hasta meter el PIN ---------- */
 const raw=(k,id)=>D[k].find(x=>x.id===id&&!x.borrado);
@@ -627,6 +649,28 @@ ${c.prep?`<div class="hprep">${ic('warn',18)}<span><b>Preparación:</b> ${esc(c.
 
 const tareaRow=(t,corto)=>{const e=epi(t.ep);const sub=corto?'':`${esc(epPer(t.ep).nombre)} · ${esc(e?.titulo||'')}`;const esp=t.tipo==='cita'&&t.esperando?`La pediste ${esc(rel(t.esperando))}: esperando que llamen`:'';
   return `<label class="chk"><input type="checkbox" data-a="tarea" data-id="${t.id}" aria-label="${esc(t.texto)}"><span style="flex:1"><span class="t">${esc(t.texto)}</span>${sub?`<span class="s">${sub}</span>`:''}${esp?`<span class="s">${esp}</span>`:''}${!corto&&t.por!==C.device?`<span class="s">Apuntada desde ${esc(t.por)}</span>`:''}</span>${t.tipo==='cita'?`<span class="tag tv">${t.esperando?'Esperando':'Cita'}</span>`:''}</label>`};
+/* calendario continuo de unas 9 semanas desde el lunes de esta semana: ~2 meses por delante */
+function vCal(){
+  const cs=citas().filter(c=>fp(c.p.id)&&c.fecha>=HOY);
+  const by={};cs.forEach(c=>(by[c.fecha]=by[c.fecha]||[]).push(c));
+  const dow=(dt(HOY).getDay()+6)%7,n=Math.ceil((dow+61)/7)*7,fin=iso(n-dow-1);
+  if(!S.calSel||S.calSel<HOY)S.calSel=(cs[0]&&cs[0].fecha<=fin)?cs[0].fecha:HOY;
+  const cells=[];
+  for(let i=0;i<n;i++){
+    const f=iso(i-dow),d=dt(f),day=d.getDate(),l=by[f]||[],sel=f===S.calSel;
+    cells.push(`<button class="cday${f<HOY?' past':''}${f===HOY?' today':''}${sel?' sel':''}${l.length?' has':''}${day===1?' m1':''}" data-a="calday" data-v="${f}" aria-pressed="${sel}" aria-label="${esc(fdate(f))}${l.length?`, ${l.length} cita${l.length>1?'s':''}`:''}">
+<span class="cn">${day===1||i===0?`${day} <small>${MES[d.getMonth()]}</small>`:day}</span>
+<span class="cd">${l.slice(0,3).map(c=>`<i class="h${c.p.h||0}"></i>`).join('')}${l.length>3?`<em>+${l.length-3}</em>`:''}</span>
+<span class="ce">${l.slice(0,3).map(c=>`<span class="h${c.p.h||0}"><b>${esc(c.hora||'')}</b> ${esc(c.p.nombre)} · ${esc(c.titulo.split(' · ')[0])}</span>`).join('')}${l.length>3?`<em>+${l.length-3} más</em>`:''}</span></button>`);
+  }
+  const people=[...new Map(cs.map(c=>[c.p.id,c.p])).values()];
+  const sl=by[S.calSel]||[],nCitas=cs.filter(c=>c.fecha<=fin).length;
+  const ttl=(S.calSel===HOY?'Hoy · ':S.calSel===iso(1)?'Mañana · ':'')+fdate(S.calSel);
+  return `<section class="sec s-cal"><div class="calh"><h3>Próximos 2 meses</h3><span class="s">${nCitas} cita${nCitas!==1?'s':''}</span></div>
+<div class="cal"><div class="cwd" aria-hidden="true">${['L','M','X','J','V','S','D'].map(x=>`<span>${x}</span>`).join('')}</div><div class="cgrid">${cells.join('')}</div>
+${people.length?`<div class="clegend">${people.map(p=>`<span><i class="h${p.h||0}"></i>${esc(p.nombre)}</span>`).join('')}</div>`:''}</div>
+<div class="calsel"><h4>${esc(ttl.replace(/^./,x=>x.toUpperCase()))}</h4>${sl.length?`<div class="list">${sl.map(c=>rowCita(c,true)).join('')}</div>`:'<p class="hint">Sin citas este día.</p>'}</div></section>`;
+}
 function vInicio(){
   if(!live('personas').length)return `<section class="sec"><div class="card"><p class="t">Empieza por la familia</p><p class="s">Añade a las personas cuyas citas vais a llevar. Después, desde cada una, sus episodios, visitas y pruebas. Y en Médicos, los especialistas con su teléfono.</p><button class="b1" data-a="form" data-f="persona">+ Añadir familiar</button></div></section>`;
   const atr=live('episodios').filter(e=>e.estado==='abierto'&&e.prev&&e.prev<HOY&&fp(e.persona)&&!citas().some(c=>c.ep===e.id&&c.fecha>=HOY));
@@ -644,6 +688,7 @@ function vInicio(){
 ${atr.map(e=>{const p=per(e.persona);const v=live('visitas').filter(x=>x.ep===e.id).sort((a,b)=>b.fecha.localeCompare(a.fecha))[0];const m=v&&medi(v.med);
 return `<div class="alert"><div class="ah">${av(p,34)}<div><p class="t">Revisión: ${esc(e.titulo)}</p><p class="s">${esc(p.nombre)} · tocaba ${esc(rel(e.prev))} y aún no hay cita</p></div></div><div class="btns">${telLink(m)}<button class="b1 warnb" data-a="form" data-f="visita" data-ep="${e.id}" data-estado="cita">Apuntar cita</button></div></div>`}).join('')}
 ${sinCerrar.map(v=>{const m=medi(v.med),p=epPer(v.ep);return `<div class="alert"><div class="ah">${av(p,34)}<div><p class="t">¿Fue ${v.tipo==='intervencion'?'la intervención':'la cita'} de ${esc(m?m.esp.toLowerCase():'')}?</p><p class="s">${esc(p.nombre)} · estaba citada ${esc(rel(v.fecha))}, a las ${esc(v.hora)}</p></div></div><div class="btns"><button class="b2" data-a="form" data-f="visita" data-id="${v.id}">Cambiar fecha</button><button class="b1 warnb" data-a="vhecha" data-id="${v.id}">Sí, fue</button></div></div>`}).join('')}</section>`:''}
+${vCal()}
 <section class="sec s-prox"><h3>Próximas citas</h3>${prox.length?heroCita(prox[0]):'<div class="list"><p class="empty">No hay citas apuntadas.</p></div>'}
 ${prox.length>1?`<div class="list">${prox.slice(1,4).map(c=>rowCita(c)).join('')}</div>`:''}${prox.length>4?`<button class="b2" data-a="tab" data-v="agenda">Ver las ${prox.length} citas en la agenda</button>`:''}</section>
 <section class="sec s-hacer"><h3>Por hacer</h3><div class="list">
@@ -998,6 +1043,7 @@ document.addEventListener('click',ev=>{
   else if(a==='priv'){const k=el.dataset.k,x=get(k,id),on=el.dataset.v==='1';
     if(on&&!hayPin()){toast('Primero crea un PIN');push({t:'pin',mode:'set'});return}
     if(write(()=>{x.privado=on;stamp(x)},on?'Marcado como privado':'Ya no es privado')&&on&&locked()){S.sheets=[];render()}}
+  else if(a==='calday'){S.calSel=el.dataset.v;const y=window.scrollY;render();window.scrollTo(0,y)}
   else if(a==='empezar'){const v=($('#devIn').value||'').trim();if(!v){$('#devIn').focus();return}C.device=v.slice(0,30);saveC();S.tab='inicio';render();sync()}
 });
 async function pinSubmit(s){
