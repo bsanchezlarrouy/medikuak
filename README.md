@@ -43,6 +43,14 @@ Si alguien nuevo tiene que entrar, añade su correo en *Test users* y comparte c
 3. En su móvil: Más → **Conectar otro móvil** en el tuyo, y que escanee el QR. Entra con su cuenta y, cuando la app lo pida, elige la hoja «Medikuak» en su Drive (solo la primera vez).
 4. En cada móvil: menú del navegador → **Añadir a pantalla de inicio**.
 
+## Personas y episodios privados
+
+- Desde la ficha de una persona o de un episodio: **Marcar como privado**. Si la persona es privada, también lo son todos sus episodios, citas, pruebas, medicación, tareas e informes.
+- El PIN (de 4 a 8 números) se crea en Más y es el mismo en todos los dispositivos. Se guarda en la pestaña Ajustes como huella PBKDF2, nunca el PIN en claro.
+- En cada dispositivo, «Ocultar lo privado en este dispositivo» está activado por defecto. En vuestros móviles se puede desactivar metiendo el PIN; en la tablet familiar, déjalo activado.
+- «Ver lo privado» lo muestra durante 5 minutos o hasta salir de la app.
+- **Límite:** el PIN oculta lo privado en la app, no en la hoja. Quien abra la hoja en Google Sheets con una cuenta que tenga acceso puede verlo. Por eso conviene compartir la hoja con la cuenta de la tablet (haudaguretablet@gmail.com) como **Lector**.
+
 ## Notas
 
 - La app solo se conecta a servicios de Google. Todo su código está en este repositorio; lo único que carga de fuera es el selector de Google Drive, que es de Google.

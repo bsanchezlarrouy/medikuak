@@ -53,6 +53,8 @@ h2,h3{margin:0}h3{font-size:18px}
 .txt{flex:1;display:flex;flex-direction:column;gap:2px}
 .t{font-weight:700}.s{color:var(--mute);font-size:15px}
 .tag{flex:none;font-size:12px;font-weight:700;padding:3px 8px;border-radius:6px;background:var(--chip);color:var(--mute)}
+.top .sync+.sync{margin-left:6px}
+.lockb{display:inline-flex;vertical-align:-2px;color:var(--mute);margin-left:4px}
 .tag.tv{background:var(--accbg);color:var(--acc)}.tag.ti{background:light-dark(#EEE7F6,#2E2944);color:light-dark(#5A3F8A,#C8BEF0)}.tag.ta{background:light-dark(#E2EFE6,#1D3326);color:light-dark(#2F5D3A,#A6D8B0)}
 .rl{display:flex;margin-top:4px}
 .red{display:inline-flex;align-items:center;gap:6px;padding:2px 9px 2px 2px;border-radius:8px;background:var(--rb);color:var(--ri);font-size:13px;font-weight:700;line-height:1.2;white-space:nowrap}
@@ -229,15 +231,16 @@ const jset=(k,v)=>{try{if(v==null)localStorage.removeItem(LS(k));else localStora
 /* ---------- tablas: una pestaña de la hoja por tabla ----------
    Cada fila: id, los campos, Actualizado, Por (móvil) y Borrado. Tipos: d = fecha AAAA-MM-DD, b = sí/no, n = número. */
 const TABLAS={
-  personas:['Familia',[['nombre','Nombre'],['h','Color','n']]],
+  personas:['Familia',[['nombre','Nombre'],['h','Color','n'],['privado','Privado','b']]],
   redes:['Redes',[['nombre','Nombre'],['h','Color'],['logo','Logo (no tocar)']]],
   medicos:['Medicos',[['nombre','Nombre'],['esp','Especialidad'],['red','Red (id)'],['centro','Centro'],['tel','Teléfono'],['notas','Notas']]],
-  episodios:['Episodios',[['persona','Persona (id)'],['titulo','Título'],['estado','Estado'],['ini','Inicio','d'],['fin','Fin','d'],['prev','Revisión prevista','d'],['notas','Notas']]],
+  episodios:['Episodios',[['persona','Persona (id)'],['titulo','Título'],['estado','Estado'],['ini','Inicio','d'],['fin','Fin','d'],['prev','Revisión prevista','d'],['notas','Notas'],['privado','Privado','b']]],
   visitas:['Visitas',[['ep','Episodio (id)'],['tipo','Tipo'],['med','Médico (id)'],['fecha','Fecha','d'],['hora','Hora'],['estado','Estado'],['prep','Preparación'],['dijo','Qué dijeron']]],
   pruebas:['Pruebas',[['ep','Episodio (id)'],['vis','Visita (id)'],['tipo','Tipo'],['nombre','Prueba'],['estado','Estado'],['esperando','Pedida el','d'],['red','Red (id)'],['fecha','Fecha','d'],['hora','Hora'],['lugar','Lugar'],['prep','Preparación'],['res','Resultado']]],
   med:['Medicacion',[['ep','Episodio (id)'],['vis','Visita (id)'],['medico','Médico (id)'],['farmaco','Fármaco'],['pauta','Pauta'],['ini','Inicio','d'],['fin','Fin','d']]],
   tareas:['Tareas',[['ep','Episodio (id)'],['vis','Visita (id)'],['texto','Tarea'],['tipo','Tipo'],['med','Médico (id)'],['esperando','Pedida el','d'],['hecha','Hecha','b'],['cita','Cita (id)']]],
-  docs:['Informes',[['ep','Episodio (id)'],['vis','Visita (id)'],['titulo','Título'],['url','Enlace'],['fecha','Fecha','d']]]
+  docs:['Informes',[['ep','Episodio (id)'],['vis','Visita (id)'],['titulo','Título'],['url','Enlace'],['fecha','Fecha','d']]],
+  ajustes:['Ajustes',[['valor','Valor']]]
 };
 const KEYS=Object.keys(TABLAS);
 const empty=()=>Object.fromEntries(KEYS.map(k=>[k,[]]));
@@ -249,7 +252,7 @@ function openIDB(){return new Promise(res=>{try{const r=indexedDB.open('medikuak
 function idbGet(k){return new Promise(res=>{if(!idb)return res(null);try{const t=idb.transaction('kv','readonly').objectStore('kv').get(k);t.onsuccess=()=>res(t.result||null);t.onerror=()=>res(null)}catch(e){res(null)}})}
 function idbPut(k,v){return new Promise(res=>{if(!idb)return res(false);try{const tx=idb.transaction('kv','readwrite');tx.objectStore('kv').put(v,k);tx.oncomplete=()=>res(true);tx.onerror=()=>res(false)}catch(e){res(false)}})}
 let D=empty();
-let C=Object.assign({device:'',sheetId:'',lector:false,pend:0},jget('config')||{});
+let C=Object.assign({device:'',sheetId:'',lector:false,pend:0,lock:true},jget('config')||{});
 let auth=jget('google');   // {token, exp, email, name}
 const saveC=()=>jset('config',C);
 let saveT=null;
@@ -262,9 +265,31 @@ async function loadAll(){
   try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
 }
 
-const S={tab:'inicio',pf:'',sheets:[],anim:-1,syncing:false,last:0,err:'',errSt:0,sheetState:'',busy:'',toast:null,q:'',closed:false,confirm:''};
+const S={unlockUntil:0,tab:'inicio',pf:'',sheets:[],anim:-1,syncing:false,last:0,err:'',errSt:0,sheetState:'',busy:'',toast:null,q:'',closed:false,confirm:''};
 
-const live=k=>D[k].filter(x=>!x.borrado);
+/* ---------- privado: oculto en este dispositivo hasta meter el PIN ---------- */
+const raw=(k,id)=>D[k].find(x=>x.id===id&&!x.borrado);
+const pinRec=()=>raw('ajustes','pin');
+const hayPin=()=>!!(pinRec()&&pinRec().valor);
+const locked=()=>hayPin()&&C.lock!==false&&!(S.unlockUntil>Date.now());
+function esPrivado(k,x){
+  if(k==='personas')return !!x.privado;
+  if(k==='episodios'){const p=raw('personas',x.persona);return !!x.privado||!!(p&&p.privado)}
+  if(k==='visitas'||k==='pruebas'||k==='med'||k==='tareas'||k==='docs'){const e=raw('episodios',x.ep);return !!e&&esPrivado('episodios',e)}
+  return false;
+}
+const live=k=>{const lk=locked();return D[k].filter(x=>!x.borrado&&!(lk&&esPrivado(k,x)))};
+const candado=(k,x)=>esPrivado(k,x)?` <span class="lockb" title="Privado">${ic('lock',14)}</span>`:'';
+const b64=u=>btoa(String.fromCharCode(...new Uint8Array(u))),unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function pinHash(pin,salt,iter=150000){
+  const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(pin),'PBKDF2',false,['deriveBits']);
+  return b64(await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt,iterations:iter},k,256));
+}
+async function pinOk(pin){const r=pinRec();if(!r)return false;const [,it,sa,h]=String(r.valor).split('$');try{return await pinHash(pin,unb64(sa),+it)===h}catch(e){return false}}
+async function pinNuevo(pin){const sa=crypto.getRandomValues(new Uint8Array(16));return 'pbkdf2$150000$'+b64(sa)+'$'+await pinHash(pin,sa)}
+function relock(){if(S.unlockUntil){S.unlockUntil=0;S.sheets=S.sheets.filter(x=>{const k=x.t,r=k&&D[k]&&raw(k,x.id);return !(r&&esPrivado(k,r))});render()}}
+setInterval(()=>{if(S.unlockUntil&&Date.now()>S.unlockUntil)relock()},15000);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)relock()});
 const get=(k,id)=>D[k].find(x=>x.id===id&&!x.borrado);
 const per=id=>get('personas',id)||{id:'',nombre:'—',h:0};
 const epi=id=>get('episodios',id);
@@ -426,7 +451,7 @@ async function sync(){
   if(S.syncing){syncAgain=true;return}
   S.syncing=true;renderTop();
   try{
-    const remote=await pull();
+    let remote;try{remote=await pull()}catch(e){if(e.status!==400)throw e;await ensureTabs(C.sheetId);remote=await pull()}
     let merged=C.lector?(prune(remote),remote):merge(remote,D);
     const changed=KEYS.some(k=>sig(k,merged[k])!==sig(k,D[k]));
     D=merged;if(changed){save();render()}
@@ -446,6 +471,11 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden){if(auth&&
 window.addEventListener('online',()=>sync());window.addEventListener('offline',()=>renderTop());
 
 /* ---------- la hoja: crear, comprobar, elegir con el selector de Drive ---------- */
+async function ensureTabs(id){
+  const j=await api(SHEETS+id+'?fields=sheets.properties.title');const tabs=((j&&j.sheets)||[]).map(s=>s.properties.title);
+  const faltan=KEYS.filter(k=>!tabs.includes(TABLAS[k][0]));
+  if(faltan.length)await api(SHEETS+id+':batchUpdate',{method:'POST',body:{requests:faltan.map(k=>({addSheet:{properties:{title:TABLAS[k][0],gridProperties:{frozenRowCount:1}}}}))}},true);
+}
 async function checkSheet(id){
   const j=await api(SHEETS+id+'?fields=properties.title,sheets.properties.title');
   const tabs=((j&&j.sheets)||[]).map(s=>s.properties.title);
@@ -519,7 +549,7 @@ function syncInfo(){
 }
 function renderTop(){
   const [c,t]=syncInfo();const title=TABS.find(x=>x[0]===S.tab)[1];
-  $('#top').innerHTML=`<h1>${S.tab==='inicio'?'Medikuak':esc(title)}</h1><button class="sync ${c}" ${!tokenOk()&&auth&&auth.email?'data-a="relogin"':'data-a="tab" data-v="mas"'}><i></i>${esc(t)}</button>${C.lector?`<div class="banner">${ic('lock',18)}<span>Solo lectura. Para cambiar cosas, pide que te hagan Editor de la hoja.</span></div>`:''}`;
+  $('#top').innerHTML=`<h1>${S.tab==='inicio'?'Medikuak':esc(title)}</h1><button class="sync ${c}" ${!tokenOk()&&auth&&auth.email?'data-a="relogin"':'data-a="tab" data-v="mas"'}><i></i>${esc(t)}</button>${hayPin()&&C.lock!==false?(locked()?`<button class="sync" data-a="unlock">${ic('lock',16)} Ver lo privado</button>`:`<button class="sync acc" data-a="relock">${ic('lock',16)} Ocultar lo privado</button>`):''}${C.lector?`<div class="banner">${ic('lock',18)}<span>Solo lectura. Para cambiar cosas, pide que te hagan Editor de la hoja.</span></div>`:''}`;
 }
 function renderPf(){
   const show=S.tab==='inicio'||S.tab==='agenda';
@@ -563,7 +593,7 @@ function vAgenda(){
 }
 function vFamilia(){
   return `<section class="sec"><div class="list">${live('personas').map(p=>{const eps=live('episodios').filter(e=>e.persona===p.id&&e.estado==='abierto');const n=citas().filter(c=>c.p.id===p.id&&c.fecha>=HOY);
-  return `<button class="row" data-a="open" data-k="personas" data-id="${p.id}">${av(p,44)}<span class="txt"><span class="t">${esc(p.nombre)}</span><span class="s">${eps.length} episodio${eps.length!==1?'s':''} abierto${eps.length!==1?'s':''}${n.length?` · próxima cita ${esc(fdate(n[0].fecha))}`:''}</span></span>${ic('chev',20)}</button>`}).join('')}</div>
+  return `<button class="row" data-a="open" data-k="personas" data-id="${p.id}">${av(p,44)}<span class="txt"><span class="t">${esc(p.nombre)}${candado('personas',p)}</span><span class="s">${eps.length} episodio${eps.length!==1?'s':''} abierto${eps.length!==1?'s':''}${n.length?` · próxima cita ${esc(fdate(n[0].fecha))}`:''}</span></span>${ic('chev',20)}</button>`}).join('')}</div>
 <button class="add" data-a="form" data-f="persona">+ Añadir familiar</button></section>`;
 }
 function medList(){
@@ -590,6 +620,11 @@ ${S.err?`<p class="ferr">${esc(S.err)}</p>`:S.last?`<p class="meta">Última sinc
 <section class="sec"><h3>Móviles conectados</h3><div class="list">${devices().map(([d,t])=>`<div class="li">${ic('phone',20)}<div><p class="t">${esc(d)}${d===C.device?' (este)':''}</p><p class="s">Último cambio ${esc(hace(t))}</p></div></div>`).join('')}</div>
 <button class="b1" data-a="open" data-k="dispositivos">${ic('qr',20)} Conectar otro móvil</button></section>
 <section class="sec"><h3>Este móvil</h3><label class="f"><span>Nombre (sale junto a lo que apuntes)</span><input id="devname" value="${esc(C.device)}" maxlength="30"></label><button class="b2" data-a="devname">Guardar nombre</button></section>
+<section class="sec"><h3>Personas y episodios privados</h3>
+<p class="hint">Marca una persona o un episodio como privado desde su ficha. En los dispositivos que lo ocultan solo se ve después de meter el PIN.</p>
+${hayPin()?`<div class="list"><button class="sw" role="switch" aria-checked="${C.lock!==false}" data-a="locksw"><span>Ocultar lo privado en este dispositivo</span><i></i></button></div>
+<button class="b2" data-a="pin" data-mode="change">Cambiar el PIN</button>`:'<button class="b2" data-a="pin" data-mode="set">Crear un PIN</button>'}
+<p class="meta">El PIN esconde lo privado en la app, no en la hoja: quien abra la hoja en Google Sheets con una cuenta que tenga acceso puede verlo.</p></section>
 <section class="sec"><h3>Privacidad</h3><ul class="plain">
 <li>Google solo deja a la app abrir los archivos que ella crea o que tú eliges en tu Drive. No ve el resto de tu Drive ni tus otras hojas.</li>
 <li>Los datos de salud solo están en la hoja y en la copia de este móvil. No van en la dirección web ni en el código de la app.</li>
@@ -608,9 +643,22 @@ function epCard(e){
   const esps=[...new Set(live('visitas').filter(v=>v.ep===e.id).map(v=>medi(v.med)?.esp).filter(Boolean))];
   const nx=n?`<span class="next">${ic('cal',18)} ${esc(fdate(n.fecha))}${n.hora?', '+esc(n.hora):''} · ${esc(n.titulo)}</span>`
     :e.estado==='abierto'&&e.prev?`<span class="next ${e.prev<HOY?'late':'soft'}">${ic('cal',18)} Revisión prevista en ${esc(fmonth(e.prev))}${e.prev<HOY?' · atrasada':''}</span>`:'';
-  return `<button class="card" data-a="open" data-k="episodios" data-id="${e.id}"><span class="t">${esc(e.titulo)}</span><span class="s">${e.estado==='abierto'?'Desde':'Del'} ${esc(fshort(e.ini))}${e.fin?' al '+esc(fshort(e.fin)):''}${esps.length?' · '+esc(esps.join(', ')):''}</span>${nx}</button>`;
+  return `<button class="card" data-a="open" data-k="episodios" data-id="${e.id}"><span class="t">${esc(e.titulo)}${candado('episodios',e)}</span><span class="s">${e.estado==='abierto'?'Desde':'Del'} ${esc(fshort(e.ini))}${e.fin?' al '+esc(fshort(e.fin)):''}${esps.length?' · '+esc(esps.join(', ')):''}</span>${nx}</button>`;
 }
 const P={};
+function privBtn(k,x){
+  if(k==='episodios'){const p=raw('personas',x.persona);if(p&&p.privado)return `<p class="meta">${ic('lock',14)} Privado porque ${esc(p.nombre)} está marcada como privada.</p>`}
+  return x.privado?`<button class="b2" data-a="priv" data-k="${k}" data-id="${x.id}" data-v="0">${ic('lock',18)} Quitar «privado»</button><p class="meta">Se oculta en los dispositivos con PIN hasta que alguien lo meta.</p>`
+    :`<button class="b2" data-a="priv" data-k="${k}" data-id="${x.id}" data-v="1">${ic('lock',18)} Marcar como privado</button>`;
+}
+P.pin=s=>{const d=s.d,m=s.mode;
+  const t={unlock:'Ver lo privado',set:'Crear un PIN',change:'Cambiar el PIN',lockoff:'No ocultar en este dispositivo'}[m];
+  const pinInp=(n,l)=>`<label class="f"><span>${l}</span><input name="${n}" type="password" inputmode="numeric" autocomplete="off" maxlength="8" value="${fv(d,n)}"></label>`;
+  return{title:t,body:`${m==='unlock'?'<p class="hint">Durante 5 minutos, o hasta que cierres la app, se verán las personas y episodios privados.</p>':''}
+${m==='set'?'<p class="hint">Entre 4 y 8 números. Es el mismo PIN en todos los dispositivos. Sin él no se puede ver lo privado en los que lo ocultan.</p>':''}
+${m==='lockoff'?'<p class="hint">Para vuestros móviles: lo privado se verá siempre en este dispositivo. En la tablet familiar, déjalo activado.</p>':''}
+${m!=='set'?pinInp('pin',m==='change'?'PIN actual':'PIN'):''}${m==='set'||m==='change'?pinInp('n1','PIN nuevo')+pinInp('n2','Repite el PIN nuevo'):''}${errP(s)}
+<div class="foot"><button class="b1" data-a="pinok">${m==='unlock'?'Ver':'Guardar'}</button></div>`}};
 P.personas=s=>{const p=get('personas',s.id);if(!p)return null;
   const eps=live('episodios').filter(e=>e.persona===p.id),ab=eps.filter(e=>e.estado==='abierto'),ce=eps.filter(e=>e.estado!=='abierto');
   const meds=live('med').filter(r=>epi(r.ep)?.persona===p.id&&(!r.fin||r.fin>=HOY));
@@ -618,7 +666,7 @@ P.personas=s=>{const p=get('personas',s.id);if(!p)return null;
 <section class="sec"><h3>Episodios abiertos</h3>${ab.map(epCard).join('')||'<p class="empty">Ninguno abierto.</p>'}<button class="add" data-a="form" data-f="episodio" data-persona="${p.id}">+ Nuevo episodio</button></section>
 <section class="sec"><h3>Tratamientos en curso</h3><div class="list">${meds.map(medRow).join('')||'<p class="empty">Ninguno.</p>'}</div></section>
 ${ce.length?`<section class="sec"><button class="b2" data-a="closed">${S.closed?'Ocultar':'Ver'} episodios cerrados (${ce.length})</button>${S.closed?ce.map(epCard).join(''):''}</section>`:''}
-<div class="foot"><button class="b2" data-a="form" data-f="persona" data-id="${p.id}">Cambiar nombre</button></div>`}};
+<div class="foot"><button class="b2" data-a="form" data-f="persona" data-id="${p.id}">Cambiar nombre</button>${privBtn('personas',p)}</div>`}};
 P.episodios=s=>{const e=get('episodios',s.id);if(!e)return null;const p=per(e.persona),abierto=e.estado==='abierto';
   const vs=live('visitas').filter(v=>v.ep===e.id),ps=live('pruebas').filter(x=>x.ep===e.id),ts=live('tareas').filter(t=>t.ep===e.id&&!t.hecha),rs=live('med').filter(r=>r.ep===e.id),ds=live('docs').filter(d=>d.ep===e.id);
   const next=citas().filter(c=>c.ep===e.id&&c.fecha>=HOY);
@@ -639,7 +687,7 @@ ${abierto?`<section class="sec"><h3>Añadir a este episodio</h3><div class="grid
 ${rs.length?`<section class="sec"><h3>Medicación</h3><div class="list">${rs.map(medRow).join('')}</div></section>`:''}
 ${ds.length?`<section class="sec"><h3>Informes</h3><div class="list">${ds.map(d=>`<a class="li" href="${esc(d.url)}" target="_blank" rel="noopener">${ic('doc',20)}<div><p class="t">${esc(d.titulo)}</p><p class="s">${esc(fshort(d.fecha))} · se abre en Google Drive</p></div>${ic('ext',18)}</a>`).join('')}</div></section>`:''}
 <div class="foot">${metaLine(e)}<button class="b2" data-a="form" data-f="episodio" data-id="${e.id}">Editar episodio</button>
-<button class="b2" data-a="${abierto?'cerrarEp':'abrirEp'}" data-id="${e.id}">${abierto?'Cerrar este episodio':'Reabrir este episodio'}</button></div>`}};
+<button class="b2" data-a="${abierto?'cerrarEp':'abrirEp'}" data-id="${e.id}">${abierto?'Cerrar este episodio':'Reabrir este episodio'}</button>${privBtn('episodios',e)}</div>`}};
 P.visitas=s=>{const v=get('visitas',s.id);if(!v)return null;const m=medi(v.med),e=epi(v.ep),p=epPer(v.ep);const c=citas().find(x=>x.id===v.id);
   const ps=live('pruebas').filter(x=>x.vis===v.id),rs=live('med').filter(r=>r.vis===v.id),ts=live('tareas').filter(t=>t.vis===v.id);
   return{title:m?`${m.esp} · ${m.nombre}`:'Visita',kick:tipoV(v)+(v.estado==='cita'?' · cita':''),body:`${m&&m.red?`<div>${badge(m.red,true)}</div>`:''}<dl class="kv"><dt>Quién</dt><dd><button data-a="open" data-k="personas" data-id="${p.id}">${esc(p.nombre)}</button></dd>
@@ -857,8 +905,26 @@ document.addEventListener('click',ev=>{
   else if(a==='otrahoja'){C.sheetId='';S.sheetState='';S.err='';saveC();render()}
   else if(a==='syncnow'){sync().then(()=>{toast(S.err||'Sincronizado');render()})}
   else if(a==='recheck'){checkSheet(C.sheetId).then(()=>{render();toast(C.lector?'Sigues siendo Lector en esta hoja':'Ya puedes cambiar cosas');sync()},e=>toast(e.message))}
+  else if(a==='unlock')push({t:'pin',mode:'unlock'});
+  else if(a==='relock'){S.unlockUntil=Date.now()-1;relock();toast('Lo privado vuelve a estar oculto')}
+  else if(a==='pin'){if(C.lector)return toast(LECTOR);push({t:'pin',mode:el.dataset.mode})}
+  else if(a==='locksw'){if(C.lock!==false)push({t:'pin',mode:'lockoff'});else{C.lock=true;saveC();render();toast('Lo privado se oculta en este dispositivo')}}
+  else if(a==='pinok')pinSubmit(top);
+  else if(a==='priv'){const k=el.dataset.k,x=get(k,id),on=el.dataset.v==='1';
+    if(on&&!hayPin()){toast('Primero crea un PIN');push({t:'pin',mode:'set'});return}
+    if(write(()=>{x.privado=on;stamp(x)},on?'Marcado como privado':'Ya no es privado')&&on&&locked()){S.sheets=[];render()}}
   else if(a==='empezar'){const v=($('#devIn').value||'').trim();if(!v){$('#devIn').focus();return}C.device=v.slice(0,30);saveC();S.tab='inicio';render();sync()}
 });
+async function pinSubmit(s){
+  const d=s.d,fail=m=>{s.err=m;renderSheets()},ok4=v=>/^\d{4,8}$/.test(v||'');
+  if(s.mode!=='set'&&!(await pinOk(d.pin||'')))return fail('PIN incorrecto');
+  if(s.mode==='unlock'){S.sheets.pop();S.unlockUntil=Date.now()+5*60000;render();return toast('Se ve lo privado durante 5 minutos')}
+  if(s.mode==='lockoff'){S.sheets.pop();C.lock=false;saveC();render();return toast('Lo privado se ve siempre en este dispositivo')}
+  if(!ok4(d.n1))return fail('El PIN nuevo tiene que tener entre 4 y 8 números');
+  if(d.n1!==d.n2)return fail('Los dos PIN nuevos no coinciden');
+  const v=await pinNuevo(d.n1);S.sheets.pop();
+  write(()=>{const r=raw('ajustes','pin');if(r){r.valor=v;stamp(r)}else D.ajustes.push(stamp({id:'pin',valor:v}))},s.mode==='set'?'PIN creado':'PIN cambiado');
+}
 function onField(ev){
   const t=ev.target;
   if(t.id==='q'){S.q=t.value;$('#mlist').innerHTML=medList();return}
