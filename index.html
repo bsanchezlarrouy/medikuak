@@ -145,6 +145,33 @@ h2,h3{margin:0}h3{font-size:18px}
 .sheet.in{animation:up .26s cubic-bezier(.2,.8,.2,1)}
 @keyframes up{from{transform:translate(-50%,40%);opacity:.4}to{transform:translate(-50%,0);opacity:1}}
 @media (prefers-reduced-motion:reduce){.sheet.in{animation:none}}
+.home{display:flex;flex-direction:column;gap:24px}
+/* ---------- pantallas anchas: tablet en horizontal y ordenador ---------- */
+@media (min-width:760px){
+  #app{max-width:none;padding:0 0 48px 104px}
+  .top,#pf,main{max-width:1120px;margin-inline:auto}
+  .top{padding:24px 32px 8px;position:static}.top h1{font-size:34px}
+  .pf{padding:4px 32px 16px;flex-wrap:wrap;overflow:visible}
+  main{padding:0 32px}
+  .tabs{top:0;bottom:0;left:0;transform:none;width:104px;height:100dvh;display:flex;flex-direction:column;justify-content:flex-start;gap:6px;padding:24px 8px;border-top:0;border-right:1px solid var(--line)}
+  .tabs button{min-height:72px;border-radius:14px;font-size:13px}
+  .tabs button[aria-current=page]{background:var(--accbg)}
+  .fab{bottom:32px;right:32px;width:64px;height:64px}
+  #toast{bottom:28px;left:calc(50% + 52px)}
+  .home{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);grid-template-rows:min-content min-content 1fr;gap:24px 32px;align-items:start}
+  .s-prox{grid-column:1;grid-row:1 / 4}.s-atr,.s-hacer,.s-esp{grid-column:2}
+  .v-agenda,.v-familia{max-width:860px}
+  .v-familia .list,.v-medicos .list{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));background:none;border:0;gap:10px;overflow:visible}
+  .v-familia .list>.row,.v-medicos .list>.row{border:1px solid var(--line);border-radius:16px;background:var(--card)}
+  .v-medicos>.sec>.inp{max-width:520px}
+  .v-mas{display:block;columns:2 380px;column-gap:32px}.v-mas>.sec{break-inside:avoid;margin-bottom:28px}
+  .sheet{left:auto;right:0;top:0;bottom:0;transform:none;width:min(560px,100%);max-height:none;height:100dvh;border-radius:22px 0 0 22px;padding:20px 28px 28px}
+  .sheet.in{animation:side .26s cubic-bezier(.2,.8,.2,1)}
+  .grab{display:none}
+}
+@media (min-width:760px) and (prefers-reduced-motion:reduce){.sheet.in{animation:none}}
+@keyframes side{from{transform:translateX(40%);opacity:.4}to{transform:none;opacity:1}}
+@media (min-width:1200px){.home{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr)}}
 .grab{width:42px;height:5px;border-radius:3px;background:var(--line);align-self:center;flex:none}
 .sh{display:flex;align-items:flex-start;gap:8px}.sh h2{flex:1;font-size:25px;line-height:1.15;padding-top:4px}
 .sh .k{display:block;font-size:13px;font-weight:700;color:var(--mute);margin-bottom:2px}
@@ -613,17 +640,17 @@ function vInicio(){
   const esperas=espT.map(t=>({k:'t',id:t.id,f:t.esperando,txt:t.texto.replace(/^pedir (una )?/i,'').replace(/^./,c=>c.toUpperCase()),ep:t.ep,m:medi(t.med)}))
     .concat(espP.map(x=>({k:'p',id:x.id,f:x.esperando,txt:x.nombre,ep:x.ep,m:null,tl:tipoP(x)}))).sort((a,b)=>a.f.localeCompare(b.f));
   const late=atr.length+sinCerrar.length;
-  return `${late?`<section class="sec"><h3 style="color:var(--warn)">${ic('warn',20)} Atrasado</h3>
+  return `${late?`<section class="sec s-atr"><h3 style="color:var(--warn)">${ic('warn',20)} Atrasado</h3>
 ${atr.map(e=>{const p=per(e.persona);const v=live('visitas').filter(x=>x.ep===e.id).sort((a,b)=>b.fecha.localeCompare(a.fecha))[0];const m=v&&medi(v.med);
 return `<div class="alert"><div class="ah">${av(p,34)}<div><p class="t">Revisión: ${esc(e.titulo)}</p><p class="s">${esc(p.nombre)} · tocaba ${esc(rel(e.prev))} y aún no hay cita</p></div></div><div class="btns">${telLink(m)}<button class="b1 warnb" data-a="form" data-f="visita" data-ep="${e.id}" data-estado="cita">Apuntar cita</button></div></div>`}).join('')}
 ${sinCerrar.map(v=>{const m=medi(v.med),p=epPer(v.ep);return `<div class="alert"><div class="ah">${av(p,34)}<div><p class="t">¿Fue ${v.tipo==='intervencion'?'la intervención':'la cita'} de ${esc(m?m.esp.toLowerCase():'')}?</p><p class="s">${esc(p.nombre)} · estaba citada ${esc(rel(v.fecha))}, a las ${esc(v.hora)}</p></div></div><div class="btns"><button class="b2" data-a="form" data-f="visita" data-id="${v.id}">Cambiar fecha</button><button class="b1 warnb" data-a="vhecha" data-id="${v.id}">Sí, fue</button></div></div>`}).join('')}</section>`:''}
-<section class="sec"><h3>Próximas citas</h3>${prox.length?heroCita(prox[0]):'<div class="list"><p class="empty">No hay citas apuntadas.</p></div>'}
+<section class="sec s-prox"><h3>Próximas citas</h3>${prox.length?heroCita(prox[0]):'<div class="list"><p class="empty">No hay citas apuntadas.</p></div>'}
 ${prox.length>1?`<div class="list">${prox.slice(1,4).map(c=>rowCita(c)).join('')}</div>`:''}${prox.length>4?`<button class="b2" data-a="tab" data-v="agenda">Ver las ${prox.length} citas en la agenda</button>`:''}</section>
-<section class="sec"><h3>Por hacer</h3><div class="list">
+<section class="sec s-hacer"><h3>Por hacer</h3><div class="list">
 ${tareas.map(t=>tareaRow(t)).join('')}
 ${pedir.map(x=>`<button class="row" data-a="open" data-k="pruebas" data-id="${x.id}"><span class="txt"><span class="t">Pedir cita: ${esc(x.nombre)}</span><span class="s">${esc(epPer(x.ep).nombre)} · ${esc(epi(x.ep)?.titulo||'')}</span></span>${tagT(tipoP(x))}</button>`).join('')}
 ${tareas.length+pedir.length?'':'<p class="empty">Nada pendiente.</p>'}</div></section>
-${esperas.length?`<section class="sec"><h3>${ic('phone',20)} Esperando que te llamen</h3><div class="list">${esperas.map(e=>`<button class="row" data-a="${e.k==='t'?'pedir':'open'}" data-k="pruebas" data-id="${e.id}"><span class="txt"><span class="t">${esc(e.txt)}</span><span class="s">${esc(epPer(e.ep).nombre)} · ${esc(epi(e.ep)?.titulo||'')}</span><span class="s">La pediste ${esc(rel(e.f))}${e.m?' · '+esc(e.m.nombre):''}</span></span>${e.k==='t'?'<span class="tag">Cita</span>':tagT(e.tl)}</button>`).join('')}</div><p class="hint">No depende de vosotros, así que nunca pasa a Atrasado. Cuando llamen, toca la fila y apunta la cita.</p></section>`:''}`;
+${esperas.length?`<section class="sec s-esp"><h3>${ic('phone',20)} Esperando que te llamen</h3><div class="list">${esperas.map(e=>`<button class="row" data-a="${e.k==='t'?'pedir':'open'}" data-k="pruebas" data-id="${e.id}"><span class="txt"><span class="t">${esc(e.txt)}</span><span class="s">${esc(epPer(e.ep).nombre)} · ${esc(epi(e.ep)?.titulo||'')}</span><span class="s">La pediste ${esc(rel(e.f))}${e.m?' · '+esc(e.m.nombre):''}</span></span>${e.k==='t'?'<span class="tag">Cita</span>':tagT(e.tl)}</button>`).join('')}</div><p class="hint">No depende de vosotros, así que nunca pasa a Atrasado. Cuando llamen, toca la fila y apunta la cita.</p></section>`:''}`;
 }
 function vAgenda(){
   const cs=citas().filter(c=>fp(c.p.id)&&c.fecha>=HOY);
@@ -677,7 +704,7 @@ ${hayPin()?`<div class="list"><button class="sw" role="switch" aria-checked="${C
 <button class="b2 danger" data-a="logout">${S.confirm==='logout'?'Pulsa otra vez: se borra la copia de este móvil':'Cerrar sesión y borrar la copia de este móvil'}</button>
 <p class="meta">La hoja de Google no se toca: lo que ya se ha sincronizado sigue allí.</p></section>`;
 }
-const VIEWS={inicio:vInicio,agenda:vAgenda,familia:vFamilia,medicos:vMedicos,mas:vMas};
+const VIEWS={inicio:()=>`<div class="home">${vInicio()}</div>`,agenda:vAgenda,familia:vFamilia,medicos:vMedicos,mas:vMas};
 
 /* ---------- fichas (hojas que suben) ---------- */
 const ADD=[['visita','Consulta','med','hecha',''],['visita','Cita','cal','cita',''],['visita','Intervención','cut','cita','intervencion'],['visita','Urgencias','warn','hecha','urgencias'],['prueba','Prueba','flask','',''],['prueba','Analítica','drop','','analitica'],['med','Fármaco','pill','',''],['tarea','Tarea','task','',''],['doc','Informe','doc','','']];
@@ -918,7 +945,7 @@ ${err}<button class="b2" data-a="otra">Usar otra cuenta</button>`;
 }
 function renderOv(){const o=$('#ov'),h=ovHTML();if(!h){o.hidden=true;o.innerHTML='';return}o.hidden=false;o.innerHTML=`<div class="onb">${h}</div>`}
 function render(){
-  renderTop();renderPf();$('#main').innerHTML=VIEWS[S.tab]();
+  renderTop();renderPf();const mn=$('#main');mn.className='v-'+S.tab;mn.innerHTML=VIEWS[S.tab]();
   $('#tabs').innerHTML=TABS.map(([k,l,i])=>`<button data-a="tab" data-v="${k}"${S.tab===k?' aria-current="page"':''}>${ic(i,24)}${l}</button>`).join('');
   $('#fab').innerHTML=ic('plus',28);renderSheets();renderOv();renderToast();
 }
