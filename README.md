@@ -22,7 +22,7 @@ Citas médicas de la familia: visitas, pruebas, medicación, tareas e informes, 
 Medikuak tiene su propio proyecto de Google Cloud, **medikuak** (número 163541765712), separado del de la lista de la compra. Es gratis y no necesita facturación.
 
 1. **GitHub Pages.** En el repositorio: Settings → Pages → *Deploy from a branch* → rama `main`, carpeta `/ (root)`. La app queda en `https://bsanchezlarrouy.github.io/medikuak/`.
-2. **APIs activadas** en el proyecto: Google Sheets API y Google Picker API.
+2. **APIs activadas** en el proyecto: Google Sheets API, Google Picker API y Google Drive API (esta última solo para que un dispositivo nuevo encuentre solo la hoja).
 3. **Google Auth Platform** (pantalla de permiso): app «Medikuak», audiencia *External*, en modo prueba.
    - *Test users:* el correo de cada cuenta que vaya a entrar.
    - *Data access:* `openid`, `userinfo.email`, `userinfo.profile` y `drive.file`.
@@ -30,7 +30,7 @@ Medikuak tiene su propio proyecto de Google Cloud, **medikuak** (número 1635417
    - *Orígenes de JavaScript autorizados:* `https://bsanchezlarrouy.github.io`
    - *URI de redirección autorizados:* `https://bsanchezlarrouy.github.io/medikuak/` (con la barra final)
 5. **Clave de API «Medikuak Picker»** para el selector de Google Drive:
-   - *Restricciones de aplicación:* Sitios web → `https://bsanchezlarrouy.github.io/medikuak/*`
+   - *Restricciones de aplicación:* Sitios web → `https://bsanchezlarrouy.github.io/*` (sin `/medikuak/`: el navegador solo envía el dominio al selector)
    - *Restricciones de API:* solo Google Picker API.
 6. El ID de cliente y la clave van en `config.js`. Ninguno es secreto: la clave solo funciona desde esta web y solo para el selector.
 

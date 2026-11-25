@@ -96,6 +96,7 @@ h2,h3{margin:0}h3{font-size:18px}
 .hi{display:flex;gap:12px;width:100%;border:0;background:none;text-align:left;padding:0}
 .rail{width:14px;flex:none;display:flex;flex-direction:column;align-items:center}
 .rail i{width:12px;height:12px;border-radius:50%;background:var(--acc);margin-top:6px}.rail b{flex:1;width:2px;background:var(--line);margin-top:4px}
+.rail i.m{background:var(--mute)}a.hi{color:var(--ink);text-decoration:none}
 .rail i.o{background:none;border:2px solid var(--mute)}
 .hb{flex:1;display:flex;flex-direction:column;gap:5px;padding:12px 14px;margin-bottom:10px;border:1px solid var(--line);border-radius:14px;background:var(--card)}
 .hb.plain{border:0;background:none;padding:2px 0 10px}
@@ -265,7 +266,7 @@ async function loadAll(){
   try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
 }
 
-const S={unlockUntil:0,tab:'inicio',pf:'',sheets:[],anim:-1,syncing:false,last:0,err:'',errSt:0,sheetState:'',busy:'',toast:null,q:'',closed:false,confirm:''};
+const S={found:null,unlockUntil:0,tab:'inicio',pf:'',sheets:[],anim:-1,syncing:false,last:0,err:'',errSt:0,sheetState:'',busy:'',toast:null,q:'',closed:false,confirm:''};
 
 /* ---------- privado: oculto en este dispositivo hasta meter el PIN ---------- */
 const raw=(k,id)=>D[k].find(x=>x.id===id&&!x.borrado);
@@ -494,6 +495,17 @@ async function createSheet(){
   await api(SHEETS+id+'/values:batchUpdate',{method:'POST',body:{valueInputOption:'RAW',data:KEYS.map(k=>({range:range(k,1),values:[COLS(k)]}))}},true);
   return id;
 }
+/* Busca hojas «Medikuak» que esta cuenta ya puede abrir: las que creó con la app o eligió antes.
+   Con el permiso drive.file, Google Drive solo devuelve esas. Necesita la Google Drive API activada. */
+async function findSheets(){
+  if(!tokenOk()||S.found)return;S.found='buscando';renderOv();
+  try{
+    const q="mimeType='application/vnd.google-apps.spreadsheet' and trashed=false and name contains 'Medikuak'";
+    const j=await api('https://www.googleapis.com/drive/v3/files?q='+encodeURIComponent(q)+'&orderBy=modifiedTime%20desc&pageSize=10&fields='+encodeURIComponent('files(id,name,modifiedTime,ownedByMe,owners(displayName))'));
+    S.found=(j&&j.files)||[];
+  }catch(e){S.found=[]}
+  renderOv();
+}
 function linkSheet(id){C.sheetId=id;C.lector=false;remoteRows={};saveC()}
 async function connect(id,how){
   S.busy=how==='crear'?'Creando la hoja «Medikuak» en tu Drive…':'Conectando con la hoja…';S.err='';renderOv();
@@ -675,6 +687,10 @@ P.episodios=s=>{const e=get('episodios',s.id);if(!e)return null;const p=per(e.pe
     const ch=ps.filter(x=>x.vis===v.id).map(x=>`<span>Pidió: ${esc(x.nombre.toLowerCase())}</span>`).concat(rs.filter(r=>r.vis===v.id).map(r=>`<span>Pautó: ${esc(r.farmaco)}</span>`),ds.filter(d=>d.vis===v.id).map(d=>`<span>Informe</span>`)).join('');
     hist.push([v.fecha,`<button class="hi" data-a="open" data-k="visitas" data-id="${v.id}"><span class="rail"><i></i><b></b></span><span class="hb"><span class="s">${esc(fshort(v.fecha))} · ${tipoV(v)}</span><span class="t">${esc(m?`${m.esp} · ${m.nombre}`:'Visita')}</span>${m&&m.red?`<span class="rl">${badge(m.red)}</span>`:''}${v.dijo?`<span class="q">${esc(v.dijo)}</span>`:''}${ch?`<span class="chips">${ch}</span>`:''}</span></button>`])});
   ps.filter(x=>(x.estado==='hecha'||x.estado==='resultado')&&x.fecha).forEach(x=>hist.push([x.fecha,`<button class="hi" data-a="open" data-k="pruebas" data-id="${x.id}"><span class="rail"><i></i><b></b></span><span class="hb"><span class="s">${esc(fshort(x.fecha))} · ${tipoP(x)}</span><span class="t">${esc(x.nombre)}</span>${x.res?`<span class="q">${esc(x.res)}</span>`:'<span class="s">Sin resultado todavía</span>'}</span></button>`]));
+  /* medicación e informes que no salen de una visita también van a la línea temporal */
+  const hiMed=(f,txt,r)=>[f,`<button class="hi" data-a="form" data-f="med" data-id="${r.id}"><span class="rail"><i class="m"></i><b></b></span><span class="hb"><span class="s">${esc(fshort(f))} · Medicación</span><span class="t">${txt}</span>${r.pauta?`<span class="q">${esc(r.pauta)}</span>`:''}</span></button>`];
+  rs.forEach(r=>{if(r.ini&&r.ini<=HOY&&!r.vis)hist.push(hiMed(r.ini,'Empieza '+esc(r.farmaco),r));if(r.fin&&r.fin<=HOY)hist.push(hiMed(r.fin,'Deja '+esc(r.farmaco),r))});
+  ds.filter(d=>!d.vis&&d.fecha).forEach(d=>hist.push([d.fecha,`<a class="hi" href="${esc(d.url)}" target="_blank" rel="noopener"><span class="rail"><i class="m"></i><b></b></span><span class="hb"><span class="s">${esc(fshort(d.fecha))} · Informe</span><span class="t">${esc(d.titulo)} ${ic('ext',16)}</span></span></a>`]));
   hist.sort((a,b)=>b[0].localeCompare(a[0]));
   hist.push(['',`<div class="hi"><span class="rail"><i class="o"></i></span><span class="hb plain"><span class="s">${esc(fshort(e.ini))} · Empieza</span>${e.notas?`<span class="q">${esc(e.notas)}</span>`:''}</span></div>`]);
   const sig=next.map(c=>rowCita(c)).join('')+ps.filter(x=>x.estado==='pedida').map(x=>`<button class="row" data-a="open" data-k="pruebas" data-id="${x.id}"><span class="txt"><span class="t">${x.esperando?'Esperando cita':'Pedir cita'}: ${esc(x.nombre)}</span><span class="s">${x.esperando?`La pediste ${esc(rel(x.esperando))}, que llamen`:tipoP(x)+' sin cita'}</span></span>${tagT(tipoP(x))}</button>`).join('')
@@ -849,6 +865,10 @@ function ovHTML(){
 <ul class="ticks">${tick('La app solo podrá abrir la hoja que ella cree o la que tú elijas en tu Drive.')}${tick('Nada más: ni el resto de tu Drive ni tus otras hojas.')}${tick('Sin contraseñas: entras con tu cuenta de Google y puedes quitarle el permiso cuando quieras.')}</ul>
 ${C.sheetId?'<p class="small">Este enlace es de una hoja compartida. Entra con la cuenta de Google con la que te la compartieron.</p>':''}
 <button class="b1" data-a="login">Entrar con Google</button>${err}`;
+  if(!C.sheetId&&Array.isArray(S.found)&&S.found.length)return `<h2>Ya tienes la hoja de la familia</h2><p class="small">Cuenta: ${esc(auth.email)}</p>
+${S.found.map(f=>`<button class="choice" data-a="usar" data-id="${esc(f.id)}">${ic('sheet',28)}<span><span class="t">Usar «${esc(f.name)}»</span><br><span class="s">${f.ownedByMe?'En tu Drive':'De '+esc((f.owners&&f.owners[0]&&f.owners[0].displayName)||'otra cuenta')} · cambiada ${esc(fshort((f.modifiedTime||'').slice(0,10)))}</span></span></button>`).join('')}
+${err}<button class="b2" data-a="nuevaigual">Crear otra hoja nueva</button><button class="b2" data-a="otra">Usar otra cuenta</button>`;
+  if(!C.sheetId&&S.found==='buscando')return `${MARK}<h2>Buscando tu hoja…</h2>`;
   if(!C.sheetId)return `<h2>¿Es la primera vez en la familia?</h2><p class="small">Cuenta: ${esc(auth.email)}</p>
 <button class="choice" data-a="crear">${ic('sheet',28)}<span><span class="t">Crear la hoja de la familia</span><br><span class="s">Se crea «Medikuak» en tu Drive. Luego la compartes con quien quieras.</span></span></button>
 <button class="choice" data-a="picker">${ic('join',28)}<span><span class="t">Unirme a la hoja que ya usa alguien</span><br><span class="s">Tienen que habértela compartido. La eliges en tu Drive (o abre el enlace o QR de su móvil).</span></span></button>
@@ -902,7 +922,9 @@ document.addEventListener('click',ev=>{
   else if(a==='otra')signIn('select');
   else if(a==='crear')connect('','crear');
   else if(a==='picker')openPicker();
-  else if(a==='otrahoja'){C.sheetId='';S.sheetState='';S.err='';saveC();render()}
+  else if(a==='otrahoja'){C.sheetId='';S.sheetState='';S.err='';S.found=null;saveC();render();findSheets()}
+  else if(a==='usar')connect(id,'unir');
+  else if(a==='nuevaigual'){S.found=[];renderOv()}
   else if(a==='syncnow'){sync().then(()=>{toast(S.err||'Sincronizado');render()})}
   else if(a==='recheck'){checkSheet(C.sheetId).then(()=>{render();toast(C.lector?'Sigues siendo Lector en esta hoja':'Ya puedes cambiar cosas');sync()},e=>toast(e.message))}
   else if(a==='unlock')push({t:'pin',mode:'unlock'});
@@ -950,6 +972,7 @@ async function startup(){
     let last=0;try{last=+(localStorage.getItem(LS('silent'))||0)}catch(e){}
     if(Date.now()-last>120000){try{localStorage.setItem(LS('silent'),String(Date.now()))}catch(e){}signIn('none');return}
   }
+  if(auth&&auth.email&&tokenOk()&&!C.sheetId)findSheets();
   if(linked()&&tokenOk()){
     if((ret&&ret.ok)||hm){
       try{await checkSheet(C.sheetId);S.sheetState='ok'}
