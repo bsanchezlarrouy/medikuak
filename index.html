@@ -291,8 +291,8 @@ const TABLAS={
   redes:['Redes',[['nombre','Nombre'],['h','Color'],['logo','Logo (no tocar)']]],
   medicos:['Medicos',[['nombre','Nombre'],['esp','Especialidad'],['red','Red (id)'],['centro','Centro'],['tel','Teléfono'],['notas','Notas']]],
   episodios:['Episodios',[['persona','Persona (id)'],['titulo','Título'],['estado','Estado'],['ini','Inicio','d'],['fin','Fin','d'],['prev','Revisión prevista','d'],['notas','Notas'],['privado','Privado','b']]],
-  visitas:['Visitas',[['ep','Episodio (id)'],['tipo','Tipo'],['med','Médico (id)'],['fecha','Fecha','d'],['hora','Hora'],['estado','Estado'],['red','Red (id)'],['lugar','Lugar'],['vacuna','Vacuna'],['dosis','Dosis'],['prep','Preparación'],['dijo','Qué dijeron']]],
-  pruebas:['Pruebas',[['ep','Episodio (id)'],['vis','Visita (id)'],['tipo','Tipo'],['nombre','Prueba'],['estado','Estado'],['esperando','Pedida el','d'],['red','Red (id)'],['fecha','Fecha','d'],['hora','Hora'],['lugar','Lugar'],['prep','Preparación'],['res','Resultado']]],
+  visitas:['Visitas',[['ep','Episodio (id)'],['tipo','Tipo'],['med','Médico (id)'],['fecha','Fecha','d'],['hora','Hora'],['estado','Estado'],['red','Red (id)'],['lugar','Lugar'],['lugar2','Dónde (detalle)'],['vacuna','Vacuna'],['dosis','Dosis'],['prep','Preparación'],['dijo','Qué dijeron']]],
+  pruebas:['Pruebas',[['ep','Episodio (id)'],['vis','Visita (id)'],['tipo','Tipo'],['nombre','Prueba'],['estado','Estado'],['esperando','Pedida el','d'],['red','Red (id)'],['fecha','Fecha','d'],['hora','Hora'],['lugar','Lugar'],['lugar2','Dónde (detalle)'],['prep','Preparación'],['res','Resultado']]],
   med:['Medicacion',[['ep','Episodio (id)'],['vis','Visita (id)'],['medico','Médico (id)'],['farmaco','Fármaco'],['pauta','Pauta'],['ini','Inicio','d'],['fin','Fin','d']]],
   tareas:['Tareas',[['ep','Episodio (id)'],['vis','Visita (id)'],['texto','Tarea'],['tipo','Tipo'],['med','Médico (id)'],['esperando','Pedida el','d'],['hecha','Hecha','b'],['cita','Cita (id)']]],
   docs:['Informes',[['ep','Episodio (id)'],['vis','Visita (id)'],['titulo','Título'],['url','Enlace'],['fecha','Fecha','d']]],
@@ -373,14 +373,14 @@ const vRed=v=>v.red||(medi(v.med)||{}).red||'';
 const telLink=m=>m&&m.tel?`<a class="b2 tel" href="tel:${esc(m.tel.replace(/\s/g,''))}">${ic('phone',18)}<span>Llamar<small>${esc(m.tel)}</small></span></a>`:'';
 
 function citas(){
-  const a=live('visitas').filter(v=>v.estado==='cita').map(v=>{const m=medi(v.med);return{k:'visitas',id:v.id,fecha:v.fecha,hora:v.hora,tipo:tipoV(v),titulo:vTitulo(v),p:epPer(v.ep),lugar:v.lugar||m?.centro||'',red:vRed(v),ep:v.ep,epT:epi(v.ep)?.titulo||'',prep:v.prep||'',med:m}});
-  const b=live('pruebas').filter(x=>x.estado==='citada'&&x.fecha).map(x=>({k:'pruebas',id:x.id,fecha:x.fecha,hora:x.hora,tipo:tipoP(x),titulo:x.nombre,p:epPer(x.ep),lugar:x.lugar||'',red:x.red||'',ep:x.ep,epT:epi(x.ep)?.titulo||'',prep:x.prep||'',med:null}));
+  const a=live('visitas').filter(v=>v.estado==='cita').map(v=>{const m=medi(v.med);return{k:'visitas',id:v.id,fecha:v.fecha,hora:v.hora,tipo:tipoV(v),titulo:vTitulo(v),p:epPer(v.ep),lugar:v.lugar||m?.centro||'',lugar2:v.lugar2||'',red:vRed(v),ep:v.ep,epT:epi(v.ep)?.titulo||'',prep:v.prep||'',med:m}});
+  const b=live('pruebas').filter(x=>x.estado==='citada'&&x.fecha).map(x=>({k:'pruebas',id:x.id,fecha:x.fecha,hora:x.hora,tipo:tipoP(x),titulo:x.nombre,p:epPer(x.ep),lugar:x.lugar||'',lugar2:x.lugar2||'',red:x.red||'',ep:x.ep,epT:epi(x.ep)?.titulo||'',prep:x.prep||'',med:null}));
   return a.concat(b).sort((x,y)=>(x.fecha+(x.hora||'')).localeCompare(y.fecha+(y.hora||'')));
 }
 function gcal(c){
   const p=n=>String(n).padStart(2,'0');const [h,m]=(c.hora||'09:00').split(':').map(Number);const d=c.fecha.replace(/-/g,'');
   const e=Math.min(h*60+m+60,23*60+59);
-  return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(`${c.p.nombre} · ${c.tipo==='Consulta'||c.tipo==='Prueba'?'':c.tipo+' · '}${c.titulo}`)+`&dates=${d}T${p(h)}${p(m)}00/${d}T${p(Math.floor(e/60))}${p(e%60)}00&ctz=Europe/Madrid`+(c.lugar?'&location='+encodeURIComponent(c.lugar):'');
+  return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(`${c.p.nombre} · ${c.tipo==='Consulta'||c.tipo==='Prueba'?'':c.tipo+' · '}${c.titulo}`)+`&dates=${d}T${p(h)}${p(m)}00/${d}T${p(Math.floor(e/60))}${p(e%60)}00&ctz=Europe/Madrid`+(c.lugar||c.lugar2?'&location='+encodeURIComponent([c.lugar,c.lugar2].filter(Boolean).join(', ')):'');
 }
 
 /* ---------- escribir y deshacer ---------- */
@@ -630,14 +630,14 @@ const cuando=f=>{const n=Math.round((dt(f)-dt(HOY))/864e5);return n===0?'Hoy':n=
 const mapsUrl=l=>'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(l);
 const rowCita=(c,timeOnly)=>`<button class="row cita" data-a="open" data-k="${c.k}" data-id="${c.id}">${timeOnly?`<span class="when h"><b>${esc(c.hora||'—')}</b></span>`:dateBlock(c)}<span class="txt"><span class="t">${esc(c.titulo)}</span>
 <span class="s who2">${av(c.p,20)}<span>${esc(c.p.nombre)} · ${esc(c.epT)}</span></span>
-<span class="s">${timeOnly?'':`<b>${esc(c.hora||'')}</b>${c.lugar?' · ':''}`}${esc(c.lugar)}</span>
+<span class="s">${timeOnly?'':`<b>${esc(c.hora||'')}</b>${c.lugar?' · ':''}`}${esc(c.lugar)}</span>${c.lugar2?`<span class="s">${esc(c.lugar2)}</span>`:''}
 ${c.red||c.prep?`<span class="rl" style="gap:6px;flex-wrap:wrap">${c.red?badge(c.red):''}${c.prep?`<span class="prepc">${ic('warn',14)} Preparación</span>`:''}</span>`:''}</span>${tagT(c.tipo)}</button>`;
 /* la próxima cita, en grande, con lo necesario para ir */
 function heroCita(c){
   const tel=c.med&&c.med.tel;
   return `<article class="hero"><div class="hh"><span class="hwhen">${esc(cuando(c.fecha))}</span>${tagT(c.tipo)}</div>
 <button class="hmain" data-a="open" data-k="${c.k}" data-id="${c.id}"><span class="hdate"><b>${esc(c.hora||'—')}</b><span>${esc(fdate(c.fecha))}</span></span><span class="txt"><span class="t" style="font-size:19px">${esc(c.titulo)}</span><span class="s who2">${av(c.p,22)}<span>${esc(c.p.nombre)} · ${esc(c.epT)}</span></span></span></button>
-${c.lugar||c.red?`<div class="hplace">${c.red?badge(c.red,true):''}<span>${esc(c.lugar)}</span></div>`:''}
+${c.lugar||c.red||c.lugar2?`<div class="hplace">${c.red?badge(c.red,true):''}<span>${esc(c.lugar)}${c.lugar2?`<br><b>${esc(c.lugar2)}</b>`:''}</span></div>`:''}
 ${c.prep?`<div class="hprep">${ic('warn',18)}<span><b>Preparación:</b> ${esc(c.prep)}</span></div>`:''}
 <div class="hact"><a class="b2" href="${esc(gcal(c))}" target="_blank" rel="noopener">${ic('cal',18)} Calendario</a>${c.lugar?`<a class="b2" href="${esc(mapsUrl(c.lugar))}" target="_blank" rel="noopener">${ic('ext',18)} Cómo llegar</a>`:''}${tel?`<a class="b2" href="tel:${esc(tel.replace(/\s/g,''))}">${ic('phone',18)} Llamar</a>`:''}</div></article>`;
 }
@@ -814,7 +814,7 @@ P.visitas=s=>{const v=get('visitas',s.id);if(!v)return null;const m=medi(v.med),
   const ps=live('pruebas').filter(x=>x.vis===v.id),rs=live('med').filter(r=>r.vis===v.id),ts=live('tareas').filter(t=>t.vis===v.id);
   return{title:vTitulo(v),kick:tipoV(v)+(v.estado==='cita'?' · cita':''),body:`${vRed(v)?`<div>${badge(vRed(v),true)}</div>`:''}<dl class="kv"><dt>Quién</dt><dd><button data-a="open" data-k="personas" data-id="${p.id}">${esc(p.nombre)}</button></dd>
 <dt>Episodio</dt><dd><button data-a="open" data-k="episodios" data-id="${e?.id||''}">${esc(e?.titulo||'—')}</button></dd>
-<dt>Cuándo</dt><dd>${esc(fdate(v.fecha))}${v.hora?', '+esc(v.hora):''} · ${esc(rel(v.fecha))}</dd><dt>Dónde</dt><dd>${esc(v.lugar||m?.centro||'—')}</dd>${v.tipo==='urgencias'&&m?`<dt>Atendió</dt><dd>${esc(m.nombre)}</dd>`:''}</dl>
+<dt>Cuándo</dt><dd>${esc(fdate(v.fecha))}${v.hora?', '+esc(v.hora):''} · ${esc(rel(v.fecha))}</dd><dt>Dónde</dt><dd>${esc(v.lugar||m?.centro||'—')}${v.lugar2?`<br><b>${esc(v.lugar2)}</b>`:''}</dd>${v.tipo==='urgencias'&&m?`<dt>Atendió</dt><dd>${esc(m.nombre)}</dd>`:''}</dl>
 ${v.prep?`<section class="sec"><h3>Preparación</h3><p class="q" style="margin:0">${esc(v.prep)}</p></section>`:''}
 ${v.dijo?`<section class="sec"><h3>${v.tipo==='intervencion'?'Cómo fue':v.tipo==='urgencias'?'Qué pasó':'Qué dijeron'}</h3><p class="q" style="margin:0">${esc(v.dijo)}</p></section>`:''}
 ${ps.length+rs.length+ts.length?`<section class="sec"><h3>Salió de esta visita</h3><div class="list">${ps.map(x=>`<button class="li" data-a="open" data-k="pruebas" data-id="${x.id}">${ic('flask',20)}<div><p class="t">${esc(x.nombre)}</p><p class="s">Prueba · ${esc(x.estado)}</p></div></button>`).join('')}${rs.map(medRow).join('')}${ts.map(t=>`<div class="li">${ic('task',20)}<div><p class="t">${esc(t.texto)}</p><p class="s">${t.hecha?'Hecha':'Pendiente'}</p></div></div>`).join('')}</div></section>`:''}
@@ -824,7 +824,7 @@ const PST=[['pedida','Pedida'],['citada','Citada'],['hecha','Hecha'],['resultado
 P.pruebas=s=>{const x=get('pruebas',s.id);if(!x)return null;const d=s.d,i=PST.findIndex(a=>a[0]===x.estado);const c=citas().find(y=>y.id===x.id);
   return{title:x.nombre,kick:`${tipoP(x)} · ${epPer(x.ep).nombre} · ${epi(x.ep)?.titulo||''}`,body:`${x.red?`<div>${badge(x.red,true)}</div>`:''}
 <div class="steps" role="group" aria-label="Estado de la prueba">${PST.map(([v,l],j)=>`<button class="st ${j<i?'done':j===i?'cur':''}" aria-pressed="${j===i}" data-a="pestado" data-id="${x.id}" data-v="${v}"><span class="c">${j<i?ic('check',14):''}</span>${l}</button>`).join('')}</div>
-${x.estado!=='pedida'?`<div class="two">${inp(d,'fecha','Fecha','date')}${inp(d,'hora','Hora','time')}</div>${sel(d,'red','Dónde: red de salud',redOpts())}${inp(d,'lugar','Centro')}`:`${x.esperando?`<div class="next soft">${ic('phone',18)} La pediste ${esc(rel(x.esperando))}. Esperando que llamen.</div>`:`<button class="choice" data-a="pespera" data-id="${x.id}">${ic('phone',28)}<span><span class="t">La he pedido, me llamarán</span><br><span class="s">Pasa a «Esperando que te llamen». No cuenta como atrasado.</span></span></button>`}<p class="hint">Cuando te den cita, pulsa «Citada» y apunta fecha, hora y lugar.</p>`}
+${x.estado!=='pedida'?`<div class="two">${inp(d,'fecha','Fecha','date')}${inp(d,'hora','Hora','time')}</div>${sel(d,'red','Dónde: red de salud',redOpts())}${inp(d,'lugar','Centro')}${inp(d,'lugar2','Dónde exactamente (opcional)','text','Pabellón 2, planta 3, consulta 14')}`:`${x.esperando?`<div class="next soft">${ic('phone',18)} La pediste ${esc(rel(x.esperando))}. Esperando que llamen.</div>`:`<button class="choice" data-a="pespera" data-id="${x.id}">${ic('phone',28)}<span><span class="t">La he pedido, me llamarán</span><br><span class="s">Pasa a «Esperando que te llamen». No cuenta como atrasado.</span></span></button>`}<p class="hint">Cuando te den cita, pulsa «Citada» y apunta fecha, hora y lugar.</p>`}
 ${x.estado==='citada'?ta(d,'prep','Preparación','Ayunas, llegar antes…'):''}
 ${x.estado==='hecha'||x.estado==='resultado'?ta(d,'res','Resultado','Qué dice el informe'):''}
 ${s.err?`<p class="ferr">${esc(s.err)}</p>`:''}
@@ -870,24 +870,29 @@ function medField(d,n,l,opcional){
    +(d[n]==='__new'?`<div class="two">${inp(d,'mNombre','Nombre','text','Dra. García')}${inp(d,'mEsp','Especialidad','text','Cardiología')}</div>${sel(d,'mRed','Red de salud',redOpts())}`:'')
    +(d[n]&&d[n]!=='__new'?`<div class="rl" style="gap:8px;align-items:center">${badge(medi(d[n])?.red)}<span class="hint">${esc(medi(d[n])?.centro||'')}</span></div>`:'');
 }
+/* «dónde exactamente» se propone con lo que se apuntó la última vez con ese médico, hasta que se toque */
+function lugar2Auto(d){
+  if(d.med&&d.med!=='__new'&&(d.lugar2===undefined||d._l2auto)){const v=live('visitas').filter(x=>x.med===d.med&&x.lugar2).sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''))[0];d.lugar2=v?v.lugar2:'';d._l2auto=true}
+  return '';
+}
 const errP=s=>s.err?`<p class="ferr">${esc(s.err)}</p>`:'';
 const saveBtn=(l='Guardar')=>`<div class="foot"><button class="b1" data-a="save">${l}</button></div>`;
 P['form-visita']=s=>{const d=s.d,urg=d.tipo==='urgencias',vac=d.tipo==='vacuna';if(urg)d.estado='hecha';const hecha=d.estado==='hecha',int=d.tipo==='intervencion';
   if(vac)return{title:s.id?'Editar vacuna':'Vacuna',body:`${seg(d,'tipo','Tipo',[['','Consulta'],['intervencion','Intervención'],['urgencias','Urgencias'],['vacuna','Vacuna']])}${s.id?'':seg(d,'estado','¿Cuándo?',[['hecha','Ya puesta'],['cita','Es una cita futura']])}${epField(s)}
 <div class="two">${inp(d,'vacuna','Vacuna','text','Gripe, tétanos…')}${inp(d,'dosis','Dosis','text','1ª, refuerzo…')}</div>
-${sel(d,'red','Red de salud',redOpts())}${inp(d,'lugar','Dónde','text','Centro de salud del barrio')}${medField(d,'med','Quién la pone (opcional)',true)}
+${sel(d,'red','Red de salud',redOpts())}${inp(d,'lugar','Dónde','text','Centro de salud del barrio')}${inp(d,'lugar2','Dónde exactamente (opcional)','text','Pabellón 2, planta 3, consulta 14')}${medField(d,'med','Quién la pone (opcional)',true)}
 <div class="two">${inp(d,'fecha','Fecha','date')}${inp(d,'hora',hecha?'Hora (opcional)':'Hora','time')}</div>
 ${hecha?ta(d,'dijo','Notas (opcional)','Lote, reacciones, recomendaciones'):''}
 ${hecha&&!s.id?`${inp(d,'proxDosis','Siguiente dosis, más o menos (opcional)','date')}<p class="hint">Si la pones, se crea la tarea de pedir esa cita.</p>`:''}${errP(s)}${saveBtn(hecha?'Guardar vacuna':'Guardar cita de vacuna')}`};
   return{title:urg?(s.id?'Editar urgencias':'Urgencias'):s.id?(int?'Editar intervención':'Editar consulta'):int?(hecha?'Intervención ya hecha':'Nueva intervención'):hecha?'Nueva consulta':'Nueva cita',body:`${seg(d,'tipo','Tipo',[['','Consulta'],['intervencion','Intervención'],['urgencias','Urgencias'],['vacuna','Vacuna']])}${s.id||urg?'':seg(d,'estado','¿Cuándo?',[['hecha','Ya fue'],['cita','Es una cita futura']])}${epField(s)}
-${urg?`${sel(d,'red','Red de salud',redOpts())}${inp(d,'lugar','Hospital','text','Hospital universitario')}${medField(d,'med','Médico que atendió (opcional)',true)}`:medField(d,'med',int?'Quién opera o atiende':'Médico')}
+${urg?`${sel(d,'red','Red de salud',redOpts())}${inp(d,'lugar','Hospital','text','Hospital universitario')}${inp(d,'lugar2','Dónde exactamente (opcional)','text','Urgencias pediátricas, box 4')}${medField(d,'med','Médico que atendió (opcional)',true)}`:medField(d,'med',int?'Quién opera o atiende':'Médico')+lugar2Auto(d)+inp(d,'lugar2','Dónde exactamente (opcional)','text','Pabellón 2, planta 3, consulta 14')}
 <div class="two">${inp(d,'fecha','Fecha','date')}${inp(d,'hora',hecha?'Hora (opcional)':'Hora','time')}</div>
 ${int&&!hecha?ta(d,'prep','Preparación','Ayunas desde las 00:00, ingreso a las 7:30, traer la analítica'):''}
 ${hecha?(urg?ta(d,'dijo','¿Qué pasó y qué dijeron?','Motivo, diagnóstico, tratamiento, cuándo volver'):int?ta(d,'dijo','¿Cómo fue?','Qué se hizo, informe de alta, cuidados'):ta(d,'dijo','¿Qué dijeron?','Diagnóstico, tratamiento, qué vigilar')):''}
 ${hecha&&!s.id?`${ta(d,'pruebas','Pruebas que pide (una por línea)','Resonancia de rodilla')}<div class="two">${inp(d,'farmaco','Medicamento','text','Ibuprofeno 600 mg')}${inp(d,'pauta','Cómo tomarlo','text','1 cada 8 h')}</div>`:''}
 ${!s.id?ta(d,'tareas','Qué hay que hacer (una por línea)','Pedir cita en 3 meses'):''}${errP(s)}${saveBtn(urg?'Guardar urgencias':int?'Guardar intervención':hecha?'Guardar consulta':'Guardar cita')}`}};
 P['form-prueba']=s=>{const d=s.d,an=d.tipo==='analitica';return{title:an?'Nueva analítica':'Nueva prueba',body:`${seg(d,'tipo','Tipo',[['','Prueba'],['analitica','Analítica']])}${epField(s)}${an?inp(d,'nombre','Qué analítica (opcional)','text','Sangre y orina'):inp(d,'nombre','Prueba','text','Resonancia de rodilla')}${seg(d,'estado','Estado',[['pedida','Pedida, sin cita'],['citada','Ya tiene cita']])}
-${d.estado==='citada'?`<div class="two">${inp(d,'fecha','Fecha','date')}${inp(d,'hora','Hora','time')}</div>${sel(d,'red','Dónde: red de salud',redOpts())}${inp(d,'lugar','Centro','text','Hospital universitario')}${ta(d,'prep','Preparación','Ayunas…')}`:''}${errP(s)}${saveBtn()}`}};
+${d.estado==='citada'?`<div class="two">${inp(d,'fecha','Fecha','date')}${inp(d,'hora','Hora','time')}</div>${sel(d,'red','Dónde: red de salud',redOpts())}${inp(d,'lugar','Centro','text','Hospital universitario')}${inp(d,'lugar2','Dónde exactamente (opcional)','text','Pabellón 2, planta 3, consulta 14')}${ta(d,'prep','Preparación','Ayunas…')}`:''}${errP(s)}${saveBtn()}`}};
 P['form-tarea']=s=>{const d=s.d;return{title:'Nueva tarea',body:`${epField(s)}${seg(d,'tipo','Tipo',[['','Otra cosa'],['cita','Pedir una cita']])}${inp(d,'texto','Qué hay que hacer','text',d.tipo==='cita'?'Pedir revisión de dermatología':'Recoger el informe')}${d.tipo==='cita'?medField(d,'med','Con quién',true)+'<p class="hint">Al marcarla, la app te pregunta si ya tienes cita y la apunta.</p>':''}${errP(s)}${saveBtn()}`}};
 P['form-med']=s=>{const d=s.d;return{title:s.id?'Editar medicamento':'Nuevo medicamento',body:`${s.id?'':epField(s)}${inp(d,'farmaco','Medicamento y dosis','text','Ibuprofeno 600 mg')}${inp(d,'pauta','Cómo tomarlo','text','1 cada 8 h si hay dolor')}${medField(d,'medico','Lo pautó',true)}
 <div class="two">${inp(d,'ini','Desde','date')}${inp(d,'fin','Hasta (vacío si sigue)','date')}</div>${errP(s)}${saveBtn()}${s.id?`<div class="foot"><button class="b2 danger" data-a="borrar" data-k="med" data-id="${s.id}">Borrar medicamento</button></div>`:''}`}};
@@ -908,7 +913,7 @@ P['form-persona']=s=>({title:s.id?'Cambiar nombre':'Nuevo familiar',body:`${inp(
 
 function initDraft(s){
   const d={};const f=s.t.slice(5);
-  if(f==='visita'){if(s.id){const v=get('visitas',s.id);Object.assign(d,{tipo:v.tipo||'',red:v.red||'',lugar:v.lugar||'',vacuna:v.vacuna||'',dosis:v.dosis||'',estado:v.estado,ep:v.ep,persona:epi(v.ep)?.persona,med:v.med,fecha:v.fecha,hora:v.hora,prep:v.prep||'',dijo:v.dijo})}
+  if(f==='visita'){if(s.id){const v=get('visitas',s.id);Object.assign(d,{tipo:v.tipo||'',red:v.red||'',lugar:v.lugar||'',lugar2:v.lugar2||'',vacuna:v.vacuna||'',dosis:v.dosis||'',estado:v.estado,ep:v.ep,persona:epi(v.ep)?.persona,med:v.med,fecha:v.fecha,hora:v.hora,prep:v.prep||'',dijo:v.dijo})}
     else{d.tipo=s.tipo||'';d.estado=s.estado||'hecha';d.fecha=d.estado==='hecha'?HOY:'';d.hora='';const last=s.ep&&live('visitas').filter(v=>v.ep===s.ep).sort((a,b)=>b.fecha.localeCompare(a.fecha))[0];if(last)d.med=last.med}}
   if(f==='prueba'){d.estado='pedida';d.tipo=s.tipo||'';const v=s.ep&&live('visitas').filter(x=>x.ep===s.ep).sort((a,b)=>b.fecha.localeCompare(a.fecha))[0];d.red=(v&&medi(v.med)?.red)||''}
   if(f==='red'){if(s.id){const r=get('redes',s.id);Object.assign(d,{nombre:r.nombre,h:r.h,logo:r.logo})}else d.h='r4'}
@@ -927,7 +932,7 @@ function saveForm(s){
   const epOk=()=>s.ep||(d.persona&&(d.ep!=='__new'||T(d.epNuevo)));
   const close=()=>{S.sheets.pop();};
   if(f==='pruebas'){const x=get('pruebas',s.id);if(x.estado==='citada'&&!d.fecha)return fail('Pon la fecha de la cita');
-    close();return write(()=>{Object.assign(x,{fecha:d.fecha||'',hora:d.hora||'',red:d.red||'',lugar:T(d.lugar),prep:T(d.prep),res:T(d.res)});stamp(x)},'Prueba guardada')}
+    close();return write(()=>{Object.assign(x,{fecha:d.fecha||'',hora:d.hora||'',red:d.red||'',lugar:T(d.lugar),lugar2:T(d.lugar2),prep:T(d.prep),res:T(d.res)});stamp(x)},'Prueba guardada')}
   if(f==='form-red'){if(!T(d.nombre))return fail('Escribe el nombre');
     close();return write(()=>{const o={nombre:T(d.nombre),h:d.h||'r4',logo:d.logo||''};if(s.id)stamp(Object.assign(get('redes',s.id),o));else D.redes.push(stamp(Object.assign({id:uid()},o)))},'Red de salud guardada')}
   if(f==='form-visita'){
@@ -939,15 +944,15 @@ function saveForm(s){
     if(!d.fecha)return fail('Pon la fecha');if(d.estado==='cita'&&!d.hora)return fail('Pon la hora de la cita');
     if(d.estado==='cita'&&d.fecha<HOY)return fail('Una cita futura no puede tener fecha pasada');
     close();return write(()=>{const ep=mkEp(s),m=mkMed(d,'med');
-      if(s.id){const v=get('visitas',s.id);Object.assign(v,{ep,tipo:d.tipo||'',med:m,red:/urgencias|vacuna/.test(d.tipo)?d.red||'':'',lugar:/urgencias|vacuna/.test(d.tipo)?T(d.lugar):'',vacuna:d.tipo==='vacuna'?T(d.vacuna):'',dosis:d.tipo==='vacuna'?T(d.dosis):'',fecha:d.fecha,hora:d.hora||'',estado:d.estado,prep:d.tipo==='intervencion'?T(d.prep):'',dijo:T(d.dijo)});stamp(v)}
-      else{const v=stamp({id:uid(),ep,tipo:d.tipo||'',med:m,red:/urgencias|vacuna/.test(d.tipo)?d.red||'':'',lugar:/urgencias|vacuna/.test(d.tipo)?T(d.lugar):'',vacuna:d.tipo==='vacuna'?T(d.vacuna):'',dosis:d.tipo==='vacuna'?T(d.dosis):'',fecha:d.fecha,hora:d.hora||'',estado:d.estado,prep:d.tipo==='intervencion'&&d.estado==='cita'?T(d.prep):'',dijo:d.estado==='hecha'?T(d.dijo):''});D.visitas.push(v);
+      if(s.id){const v=get('visitas',s.id);Object.assign(v,{ep,tipo:d.tipo||'',med:m,red:/urgencias|vacuna/.test(d.tipo)?d.red||'':'',lugar:/urgencias|vacuna/.test(d.tipo)?T(d.lugar):'',lugar2:T(d.lugar2),vacuna:d.tipo==='vacuna'?T(d.vacuna):'',dosis:d.tipo==='vacuna'?T(d.dosis):'',fecha:d.fecha,hora:d.hora||'',estado:d.estado,prep:d.tipo==='intervencion'?T(d.prep):'',dijo:T(d.dijo)});stamp(v)}
+      else{const v=stamp({id:uid(),ep,tipo:d.tipo||'',med:m,red:/urgencias|vacuna/.test(d.tipo)?d.red||'':'',lugar:/urgencias|vacuna/.test(d.tipo)?T(d.lugar):'',lugar2:T(d.lugar2),vacuna:d.tipo==='vacuna'?T(d.vacuna):'',dosis:d.tipo==='vacuna'?T(d.dosis):'',fecha:d.fecha,hora:d.hora||'',estado:d.estado,prep:d.tipo==='intervencion'&&d.estado==='cita'?T(d.prep):'',dijo:d.estado==='hecha'?T(d.dijo):''});D.visitas.push(v);
         if(d.tipo==='vacuna'&&d.estado==='hecha'&&d.proxDosis)D.tareas.push(stamp({id:uid(),ep,vis:v.id,texto:`Pedir cita: vacuna ${T(d.vacuna).toLowerCase()}, siguiente dosis (hacia ${fshort(d.proxDosis)})`,tipo:'cita',med:'',esperando:'',hecha:false}));
         if(d.estado==='hecha'&&d.tipo!=='vacuna'){lines(d.pruebas).forEach(t=>D.pruebas.push(stamp({id:uid(),ep,vis:v.id,nombre:t,estado:'pedida',fecha:'',hora:'',lugar:'',prep:'',res:''})));
           if(T(d.farmaco))D.med.push(stamp({id:uid(),ep,vis:v.id,medico:m,farmaco:T(d.farmaco),pauta:T(d.pauta),ini:d.fecha,fin:''}))}
         lines(d.tareas).forEach(t=>D.tareas.push(stamp({id:uid(),ep,vis:v.id,texto:t,tipo:esCita(t)?'cita':'',med:esCita(t)?m:'',esperando:'',hecha:false})));
         if(s.fromTask){const t=get('tareas',s.fromTask);if(t){t.hecha=true;t.cita=v.id;stamp(t)}}}},s.id?'Guardado':s.fromTask?'Cita apuntada y tarea cerrada':d.tipo==='vacuna'?(d.estado==='cita'?'Cita de vacuna apuntada':'Vacuna apuntada'):d.tipo==='urgencias'?'Urgencias guardadas':d.tipo==='intervencion'?'Intervención apuntada':d.estado==='cita'?'Cita apuntada':'Consulta guardada')}
   if(f==='form-prueba'){if(!epOk())return fail('Escribe el nombre del episodio nuevo');if(!T(d.nombre)&&d.tipo!=='analitica')return fail('Escribe qué prueba es');if(d.estado==='citada'&&!d.fecha)return fail('Pon la fecha de la cita');
-    close();return write(()=>{D.pruebas.push(stamp({id:uid(),ep:mkEp(s),vis:'',tipo:d.tipo||'',nombre:T(d.nombre)||'Analítica',estado:d.estado,fecha:d.estado==='citada'?d.fecha:'',hora:d.estado==='citada'?d.hora||'':'',red:d.red||'',lugar:T(d.lugar),prep:T(d.prep),res:''}))},d.tipo==='analitica'?'Analítica apuntada':'Prueba apuntada')}
+    close();return write(()=>{D.pruebas.push(stamp({id:uid(),ep:mkEp(s),vis:'',tipo:d.tipo||'',nombre:T(d.nombre)||'Analítica',estado:d.estado,fecha:d.estado==='citada'?d.fecha:'',hora:d.estado==='citada'?d.hora||'':'',red:d.red||'',lugar:T(d.lugar),lugar2:T(d.lugar2),prep:T(d.prep),res:''}))},d.tipo==='analitica'?'Analítica apuntada':'Prueba apuntada')}
   if(f==='form-tarea'){if(!epOk())return fail('Escribe el nombre del episodio nuevo');if(!T(d.texto))return fail('Escribe la tarea');
     if(d.med==='__new'&&!T(d.mNombre))return fail('Escribe el nombre del médico');
     close();return write(()=>{D.tareas.push(stamp({id:uid(),ep:mkEp(s),vis:'',texto:T(d.texto),tipo:d.tipo||'',med:d.tipo==='cita'?mkMed(d,'med'):'',esperando:'',hecha:false}))},'Tarea apuntada')}
@@ -1014,7 +1019,7 @@ document.addEventListener('click',ev=>{
   if(a==='tab'){S.tab=el.dataset.v;S.sheets=[];window.scrollTo(0,0);render()}
   else if(a==='pf'){S.pf=el.dataset.v;render()}
   else if(a==='close'){S.sheets.pop();renderSheets()}
-  else if(a==='open'){const k=el.dataset.k;if(!id&&k!=='dispositivos')return;let d={};if(k==='pruebas'){const x=get('pruebas',id);d={fecha:x.fecha,hora:x.hora,lugar:x.lugar,prep:x.prep,res:x.res}}push({t:k,id,d})}
+  else if(a==='open'){const k=el.dataset.k;if(!id&&k!=='dispositivos')return;let d={};if(k==='pruebas'){const x=get('pruebas',id);d={fecha:x.fecha,hora:x.hora,red:x.red||'',lugar:x.lugar,lugar2:x.lugar2||'',prep:x.prep,res:x.res}}push({t:k,id,d})}
   else if(a==='nuevo'){if(C.lector)return toast('Solo lectura: tu cuenta es Lector en esta hoja.');push({t:'nuevo'})}
   else if(a==='form'){if(C.lector)return toast('Solo lectura: tu cuenta es Lector en esta hoja.');
     if(top&&top.t==='nuevo')S.sheets.pop();push({t:'form-'+el.dataset.f,id,ep:el.dataset.ep||'',estado:el.dataset.estado||'',tipo:el.dataset.tipo||'',persona:el.dataset.persona||''})}
@@ -1071,7 +1076,7 @@ function onField(ev){
   if(t.id==='q'){S.q=t.value;$('#mlist').innerHTML=medList();return}
   const top=S.sheets[S.sheets.length-1];if(!top||!t.name||!t.closest('.sheet'))return;
   if(t.type==='file'){if(ev.type!=='change'||!t.files[0])return;toLogo(t.files[0]).then(u=>{top.d.logo=u;renderSheets()},()=>{top.err='No se pudo leer esa imagen. Prueba con un PNG o JPG.';renderSheets()});return}
-  top.d[t.name]=t.value;if(top.err){top.err='';const e=t.closest('.sheet').querySelector('.ferr');if(e)e.remove()}
+  top.d[t.name]=t.value;if(t.name==='lugar2')top.d._l2auto=false;if(top.err){top.err='';const e=t.closest('.sheet').querySelector('.ferr');if(e)e.remove()}
   if(ev.type==='change'&&t.dataset.rr)renderSheets();
 }
 document.addEventListener('input',onField);document.addEventListener('change',onField);
